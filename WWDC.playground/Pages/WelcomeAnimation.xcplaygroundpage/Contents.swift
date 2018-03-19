@@ -18,12 +18,12 @@ class ViewController: UIViewController {
     
     var fullAnimationTime: CFTimeInterval = 5.0
     
-    var colors: [UIColor] = [UIColor(red: 100.0/255.0, green: 185.0/255.0, blue: 77.0/255.0, alpha: 1.0),
-                             UIColor(red: 251.0/255.0, green: 183.0/255.0, blue: 59.0/255.0, alpha: 1.0),
-                             UIColor(red: 243.0/255.0, green: 130.0/255.0, blue: 48.0/255.0, alpha: 1.0),
-                             UIColor(red: 222.0/255.0, green: 60.0/255.0, blue: 67.0/255.0, alpha: 1.0),
-                             UIColor(red: 149.0/255.0, green: 65.0/255.0, blue: 149.0/255.0, alpha: 1.0),
-                             UIColor(red: 25.0/255.0, green: 158.0/255.0, blue: 217.0/255.0, alpha: 1.0)]
+    var colors: [UIColor] = [AppColor.Apple.green,
+                             AppColor.Apple.yellow,
+                             AppColor.Apple.orange,
+                             AppColor.Apple.red,
+                             AppColor.Apple.purple,
+                             AppColor.Apple.blue]
     
     var canContinueToNextScreen = false
     

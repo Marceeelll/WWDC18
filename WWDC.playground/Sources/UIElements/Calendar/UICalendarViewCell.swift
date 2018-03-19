@@ -6,11 +6,11 @@ public class UICalendarViewCell: UIView {
     
     private let markerSize: CGFloat = 5.0
     
-    private var hasDoneWorkoutView: UIView!
+    private var hasEventWorkoutView: UIView!
     private var isSelectedView: UIView!
     
     private var isSelectedMonth = false
-    private var hasDoneWorkout = false
+    private var hasEvent = false
     private var isToday = false
     
     public var date: Date!
@@ -35,10 +35,10 @@ public class UICalendarViewCell: UIView {
         isSelectedView = UIView()
         self.addSubview(isSelectedView)
         
-        hasDoneWorkoutView = UIView(frame: CGRect(x: 0, y: 0, width: markerSize, height: markerSize))
-        hasDoneWorkoutView.alpha = 0.0
-        hasDoneWorkoutView.layer.cornerRadius = hasDoneWorkoutView.frame.width/2
-        self.addSubview(hasDoneWorkoutView)
+        hasEventWorkoutView = UIView(frame: CGRect(x: 0, y: 0, width: markerSize, height: markerSize))
+        hasEventWorkoutView.alpha = 0.0
+        hasEventWorkoutView.layer.cornerRadius = hasEventWorkoutView.frame.width/2
+        self.addSubview(hasEventWorkoutView)
         
         dateLabel = UILabel()
         dateLabel.textAlignment = .center
@@ -50,9 +50,9 @@ public class UICalendarViewCell: UIView {
     
     
     // MARK: - Instance Methods
-    public func set(isSelectedMonth: Bool, hasDoneWorkout: Bool, isToday: Bool) {
+    public func set(isSelectedMonth: Bool, hasEvent: Bool, isToday: Bool) {
         self.isSelectedMonth = isSelectedMonth
-        self.hasDoneWorkout = hasDoneWorkout
+        self.hasEvent = hasEvent
         self.isToday = isToday
         
         setUpCellColors()
@@ -67,14 +67,14 @@ public class UICalendarViewCell: UIView {
      */
     private func setUpCellColors() {
         isSelectedView.backgroundColor = backgroundColor
-        if isToday && hasDoneWorkout {
+        if isToday && hasEvent {
             isTodayWithWorkout()
         } else if isToday {
             isTodayDay()
-        } else if isSelectedMonth && hasDoneWorkout {
+        } else if isSelectedMonth && hasEvent {
             isNormalMonthWithWorkoutDay()
-        } else if !isSelectedMonth && hasDoneWorkout {
-            isOutsideSelectedMonthWorkoutDay()
+        } else if !isSelectedMonth && hasEvent {
+            isOutsideSelectedMonthEventDay()
         } else if !isSelectedMonth {
             isOutsideSelectedMonthDay()
         } else {
@@ -88,7 +88,7 @@ public class UICalendarViewCell: UIView {
     
     private func isTodayWithWorkout() {
         dateLabel.textColor = AppColor.Theme.main
-        hasDoneWorkoutView.backgroundColor = AppColor.Theme.main
+        hasEventWorkoutView.backgroundColor = AppColor.Theme.main
     }
     
     private func isNormalMonthDay() {
@@ -97,16 +97,16 @@ public class UICalendarViewCell: UIView {
     
     private func isNormalMonthWithWorkoutDay() {
         dateLabel.textColor = AppColor.Calendar.text
-        hasDoneWorkoutView.backgroundColor = AppColor.Calendar.trainingMarker
+        hasEventWorkoutView.backgroundColor = AppColor.Calendar.trainingMarker
     }
     
     private func isOutsideSelectedMonthDay() {
         dateLabel.textColor = AppColor.Calendar.otherMonth
     }
     
-    private func isOutsideSelectedMonthWorkoutDay() {
+    private func isOutsideSelectedMonthEventDay() {
         dateLabel.textColor = AppColor.Calendar.otherMonth
-        hasDoneWorkoutView.backgroundColor = AppColor.Calendar.otherMonth
+        hasEventWorkoutView.backgroundColor = AppColor.Calendar.otherMonth
     }
     
     private func setUpConstraints() {
@@ -115,19 +115,19 @@ public class UICalendarViewCell: UIView {
         ConstraintAssistant.addConstraints(on: dateLabel, centerInSuperview: self)
         
         // Small Circle - Training Marker
-        hasDoneWorkoutView.translatesAutoresizingMaskIntoConstraints = false
+        hasEventWorkoutView.translatesAutoresizingMaskIntoConstraints = false
         // Rules: (damit auch auf kleinen Geräten wie iPhone 5 korrekt)
         //          - Abstand von label.bottom zu self.bottom > markerSize --> dann den Marker an label.bottom anheften
         //          - Abstand von label.bottom zu self.bottom < markerSize --> dann den Marker an self.bottom anheften
-        let centerX = NSLayoutConstraint(item: hasDoneWorkoutView,
+        let centerX = NSLayoutConstraint(item: hasEventWorkoutView,
                                          attribute: .centerX, relatedBy: .equal,
                                          toItem: self, attribute: .centerX,
                                          multiplier: 1.0, constant: 0.0)
-        let height = NSLayoutConstraint(item: hasDoneWorkoutView,
+        let height = NSLayoutConstraint(item: hasEventWorkoutView,
                                         attribute: .height, relatedBy: .equal,
                                         toItem: nil, attribute: .notAnAttribute,
                                         multiplier: 1.0, constant: markerSize)
-        let width = NSLayoutConstraint(item: hasDoneWorkoutView,
+        let width = NSLayoutConstraint(item: hasEventWorkoutView,
                                        attribute: .width, relatedBy: .equal,
                                        toItem: nil, attribute: .notAnAttribute,
                                        multiplier: 1.0, constant: markerSize)
@@ -141,12 +141,12 @@ public class UICalendarViewCell: UIView {
         //          Dieser Teil kann gelöscht werden, wenn die Constraints korrekt gesetzt wurden und nicht berechnet werden.
         DispatchQueue.main.asyncAfter(deadline: .now() + AnimationDuration.changeBackgroundSpeedSuperFast) {
             if self.shouldDocToBottom() {
-                variableConstraint = NSLayoutConstraint(item: self.hasDoneWorkoutView,
+                variableConstraint = NSLayoutConstraint(item: self.hasEventWorkoutView,
                                                         attribute: .bottom, relatedBy: .equal,
                                                         toItem: self, attribute: .bottom,
                                                         multiplier: 1.0, constant: 0.0)
             } else {
-                variableConstraint = NSLayoutConstraint(item: self.hasDoneWorkoutView,
+                variableConstraint = NSLayoutConstraint(item: self.hasEventWorkoutView,
                                                         attribute: .top, relatedBy: .equal,
                                                         toItem: self.dateLabel, attribute: .bottom,
                                                         multiplier: 1.0, constant: 0.0)
@@ -169,7 +169,7 @@ public class UICalendarViewCell: UIView {
     
     private func animateWorkoutMarkerAppearing() {
         UIView.animate(withDuration: AnimationDuration.changeBackgroundSpeed) {
-            self.hasDoneWorkoutView.alpha = 1.0
+            self.hasEventWorkoutView.alpha = 1.0
         }
     }
     
@@ -183,8 +183,8 @@ public class UICalendarViewCell: UIView {
         isSelectedView.layer.cornerRadius = bounds.height / 2
         isSelectedView.backgroundColor = AppColor.Calendar.selectedToday
         dateLabel.textColor = AppColor.Calendar.selectedDayText
-        if hasDoneWorkout {
-            self.hasDoneWorkoutView.backgroundColor = AppColor.Calendar.selectedDayText
+        if hasEvent {
+            self.hasEventWorkoutView.backgroundColor = AppColor.Calendar.selectedDayText
         }
     }
 }

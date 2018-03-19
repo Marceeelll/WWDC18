@@ -7,7 +7,7 @@ public class UICalendarViewDataSource: NSObject, UICalendarViewDataSourceProtoco
     // MARK: - Instance Variable
     public let numberOfWeekdays = 7
     
-    public var startWeekOn: UICalendarWeekday = .monday
+    public var startWeekOn: UICalendarWeekday = .sunday
     
     private (set)var current: Date!
     private var currentMonth: Int
@@ -106,7 +106,7 @@ public class UICalendarViewDataSource: NSObject, UICalendarViewDataSourceProtoco
         let isAEventDate = hasEvent(onDate: date)
         let isToday = calendarOperations.isToday(date: date)
         
-        cell.set(isSelectedMonth: isSelectedMonth, hasDoneWorkout: isAEventDate, isToday: isToday)
+        cell.set(isSelectedMonth: isSelectedMonth, hasEvent: isAEventDate, isToday: isToday)
         
         cell.backgroundColor = isEvenCell(indexPath: indexPath) ? AppColor.Calendar.evenDay : AppColor.Calendar.oddDay
         

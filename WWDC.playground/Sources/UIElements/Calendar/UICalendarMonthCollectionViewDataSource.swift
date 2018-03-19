@@ -5,7 +5,6 @@ import UIKit
  
  Currently the collection view contains only one view, which doesnt allow to scroll inside the collection view.
  
- // TODO: ✅ Mehre Views, damit im Kalender hin und her gewischt werden kann, um die Monate zu wechseln.
  */
 public class UICalendarMonthCollectionViewDataSource: NSObject, UICollectionViewDataSource {
     weak var calendarView: UICalendarView!
@@ -30,13 +29,6 @@ public class UICalendarMonthCollectionViewDataSource: NSObject, UICollectionView
         return cell
     }
     
-    /**
-     Da die UICollectionViewCell reused wird würde ohne die folgende Methode jedesmal den Kalender erneut der View hinzufügen.
-     
-     Deshalb wird überprüft ob sich die der Calender (was in diesem Fall eine UIStackView ist) auf der view befindet und dementsprechend gelöscht.
-     
-     TODO: ✅ nicht von der View entfernen sondern den Kalender mit den neuen werten updaten.
-     */
     public func removeOldCalendarStackView(in cell: UICollectionViewCell) {
         for subview in cell.subviews {
             if let stackView = subview as? UIStackView {

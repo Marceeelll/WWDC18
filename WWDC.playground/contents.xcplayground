@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<playground version='6.0' target-platform='ios' executeOnSourceChanges='false'>
+<playground version='6.0' target-platform='ios' display-mode='rendered' executeOnSourceChanges='false'>
     <pages>
         <page name='WelcomeAnimation'/>
         <page name='Untitled Page'/>
+        <page name='Info'/>
+        <page name='Demo'/>
     </pages>
 </playground>
