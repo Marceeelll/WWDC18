@@ -5,6 +5,45 @@ import PlaygroundSupport
 
 var str = "Hello, playground"
 
+struct Event {
+    var title: String
+    var startDate: Date
+    var endDate: Date
+    var type: EventType
+    var isFullTime: Bool
+}
+
+enum EventType {
+    case birthday
+    case christmas
+    case wwdc
+    case newYear
+    case holiday
+    case important
+    
+    var symbol: String {
+        switch self {
+        case .birthday: return "🎂"
+        case .christmas: return "🎅"
+        case .wwdc: return "👨‍💻"
+        case .newYear: return "🎊"
+        case .holiday: return "🌴"
+        case .important: return "⚠️"
+        }
+    }
+    
+    var color: UIColor {
+        switch self {
+        case .birthday: return UIColor.purple
+        case .christmas: return UIColor.red
+        case .wwdc: return UIColor.orange
+        case .newYear: return UIColor.cyan
+        case .holiday: return UIColor.green
+        case .important: return UIColor.yellow
+        }
+    }
+}
+
 class UICalendarDayOverviewTableViewCell: UITableViewCell {
     private var timeStackView = UIStackView()
     var startTimeLabel = UILabel()
@@ -150,12 +189,28 @@ class CreateEntryViewController: UIViewController {
 class ViewController: UIViewController {
     var calendarView: UICalendarView = UICalendarView()
     var calenderDayOverviewTableView = UICalendarDayOverviewTableView()
+    
+    var events: [Event] = [Event(title: "Denise Hagmann's Birthday",
+                                 startDate: Date(timeIntervalSinceNow: -86400*3),
+                                 endDate: Date(timeIntervalSinceNow: -86400*3),
+                                 type: .birthday, isFullTime: false),
+                           Event(title: "WWDC Submission Deadline",
+                                 startDate: Date(), endDate: Date(),
+                                 type: .important, isFullTime: true),
+                           Event(title: "WWDC 2018",
+                                 startDate: Date(timeIntervalSinceNow: 86400*2),
+                                 endDate: Date(),
+                                 type: .birthday, isFullTime: false)]
+    
+    lazy var eventDates: [Date] = {
+        return events.map({ (event) -> Date in
+            return event.startDate
+        })
+    }()
 
     var dataSource: UICalendarViewDataSource! {
         didSet {
-            dataSource.datesWithEvent = [Date(timeIntervalSinceNow: -86400*3),
-                                         Date(timeIntervalSinceNow: 86400*6),
-                                         Date()]
+            dataSource.datesWithEvent = eventDates
             calendarView.dataSource = dataSource
         }
     }
