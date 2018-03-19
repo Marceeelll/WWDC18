@@ -3,14 +3,54 @@
 import UIKit
 import PlaygroundSupport
 
-var str = "Hello, playground"
-
 struct Event {
     var title: String
     var startDate: Date
     var endDate: Date
     var type: EventType
     var isFullTime: Bool
+    
+    func getDatesBetweenStartAndEnd() -> [Date] {
+        if let durationInDays = Calendar.current.dateComponents([.day], from: startDate, to: endDate).day {
+            var days: [Date] = []
+            for dayDuration in 0...durationInDays {
+                if let day = Calendar.current.date(byAdding: .day, value: dayDuration, to: startDate) {
+                    days.append(day)
+                }
+            }
+            return days
+        }
+        return []
+    }
+    
+    func isOneDayEvent() -> Bool {
+        return Calendar.current.isDate(startDate, inSameDayAs: endDate)
+    }
+    
+    func isDateBetweenStartAndEndDate(dateToCheck date: Date) -> Bool {
+        return Calendar.current.isDate(date, inSameDayAs: min(max(startDate, date), endDate))
+    }
+    
+    func getTimes(forDate date: Date) -> (startTime: String, endTime: String) {
+        let dateFormatter = DateFormatter()
+        dateFormatter.timeStyle = .short
+        
+        if isFullTime {
+            return ("all-day", "")
+        } else if isOneDayEvent() {
+            let startTime = dateFormatter.string(from: startDate)
+            let endTime = dateFormatter.string(from: endDate)
+            return (startTime, endTime)
+        } else if Calendar.current.isDate(startDate, inSameDayAs: date) {
+            let startTime = dateFormatter.string(from: startDate)
+            return (startTime, "")
+        } else if !Calendar.current.isDate(endDate, inSameDayAs: date) {
+            return ("all-day", "")
+        } else {
+            let endTime = dateFormatter.string(from: endDate)
+            return ("End", endTime)
+        }
+    }
 }
 
 enum EventType {
@@ -44,15 +84,53 @@ enum EventType {
     }
 }
 
+class EventController {
+    var events: [Event] = []
+    var dates: [Date] = []
+    
+    func createDemonstrationEvents() {
+        events = [Event(title: "Denise Hagmann's Birthday",
+                        startDate: Date(timeIntervalSince1970: 1521471600),
+                        endDate: Date(timeIntervalSince1970: 1521482400),
+                        type: .birthday, isFullTime: false),
+                  Event(title: "WWDC Submission Deadline",
+                        startDate: Date(timeIntervalSince1970: 1522605600),
+                        endDate: Date(timeIntervalSince1970: 1522609200),
+                        type: .important, isFullTime: true),
+                  Event(title: "WWDC 2018",
+                        startDate: Date(timeIntervalSince1970: 1528099200),
+                        endDate: Date(timeIntervalSince1970: 1528480800),
+                        type: .wwdc, isFullTime: false)]
+        
+        var dateSet: Set<Date> = []
+        for event in events {
+            for date in event.getDatesBetweenStartAndEnd() {
+                dateSet.insert(date)
+            }
+        }
+        dates = Array(dateSet)
+    }
+    
+    func getEvents(forDate date: Date) -> [Event] {
+        var result: [Event] = []
+        for event in events {
+            if event.isDateBetweenStartAndEndDate(dateToCheck: date) {
+                result.append(event)
+            }
+        }
+        return result
+    }
+}
+
 class UICalendarDayOverviewTableViewCell: UITableViewCell {
     private var timeStackView = UIStackView()
     var startTimeLabel = UILabel()
     var endTimeLabel = UILabel()
     var descriptionLabel = UILabel()
     var eventImageView = UILabel()
-    private var seperatorView = UIView()
+    var seperatorView = UIView()
     
-    let borderSpace: CGFloat = 8.0
+    private let borderSpace: CGFloat = 8.0
     
     let fontTest = UIFont(name: "Helvetica", size: 12.0)
     
@@ -123,7 +201,8 @@ class UICalendarDayOverviewTableViewCell: UITableViewCell {
 }
 
 class UICalendarDayOverviewTableView: UITableView {
-    var data: [String] = ["Hello", "World"]
+    var data: [Event] = []
+    var selectedDate: Date?
     
     override init(frame: CGRect, style: UITableViewStyle) {
         super.init(frame: frame, style: style)
@@ -136,7 +215,6 @@ class UICalendarDayOverviewTableView: UITableView {
     }
     
     func setup() {
-        print("SETUP")
         self.dataSource = self
         self.delegate = self
     }
@@ -150,19 +228,19 @@ extension UICalendarDayOverviewTableView: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! UICalendarDayOverviewTableViewCell
-//        let eventName = getEvent(atIndexPath: indexPath)
-//        cell.textLabel?.text = eventName
-        cell.startTimeLabel.text = "08:45"
-        cell.endTimeLabel.text = "09:15"
-        cell.descriptionLabel.text = "🎂 Denise Hagmann’s Birthday"
-        if indexPath.row % 2 == 0 {
-            cell.descriptionLabel.text = "🎈 Denise Hagmann’s Birthday"
+        let event = getEvent(atIndexPath: indexPath)
+        cell.descriptionLabel.text = "\(event.type.symbol)\(event.title)"
+        if let selectedDate = selectedDate {
+            let times = event.getTimes(forDate: selectedDate)
+            cell.startTimeLabel.text = times.startTime
+            cell.endTimeLabel.text = times.endTime
         }
+        cell.seperatorView.backgroundColor = event.type.color
         return cell
     }
     
-    func getEvent(atIndexPath indexPath: IndexPath) -> String {
-        return data[indexPath.row]
+    func getEvent(atIndexPath indexPath: IndexPath) -> Event {
+        return  data[indexPath.row]
     }
 }
 
@@ -170,10 +248,6 @@ extension UICalendarDayOverviewTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
     }
-    
-//    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-//        return 55.0
-//    }
 }
 
 
@@ -190,27 +264,11 @@ class ViewController: UIViewController {
     var calendarView: UICalendarView = UICalendarView()
     var calenderDayOverviewTableView = UICalendarDayOverviewTableView()
     
-    var events: [Event] = [Event(title: "Denise Hagmann's Birthday",
-                                 startDate: Date(timeIntervalSinceNow: -86400*3),
-                                 endDate: Date(timeIntervalSinceNow: -86400*3),
-                                 type: .birthday, isFullTime: false),
-                           Event(title: "WWDC Submission Deadline",
-                                 startDate: Date(), endDate: Date(),
-                                 type: .important, isFullTime: true),
-                           Event(title: "WWDC 2018",
-                                 startDate: Date(timeIntervalSinceNow: 86400*2),
-                                 endDate: Date(),
-                                 type: .birthday, isFullTime: false)]
-    
-    lazy var eventDates: [Date] = {
-        return events.map({ (event) -> Date in
-            return event.startDate
-        })
-    }()
+    let eventCtrl = EventController()
 
     var dataSource: UICalendarViewDataSource! {
         didSet {
-            dataSource.datesWithEvent = eventDates
+            dataSource.datesWithEvent = eventCtrl.dates
             calendarView.dataSource = dataSource
         }
     }
@@ -219,12 +277,19 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        eventCtrl.createDemonstrationEvents()
+        
         calenderDayOverviewTableView.register(UICalendarDayOverviewTableViewCell.self, forCellReuseIdentifier: "cell")
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(showAddNewEntryViewController))
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Today", style: .plain, target: self, action: nil)
 
         self.view.backgroundColor = UIColor.lightGray
+        
+        let today = Date()
+        let eventsss = eventCtrl.getEvents(forDate: today)
+        calenderDayOverviewTableView.data = eventsss
+        calenderDayOverviewTableView.selectedDate = today
         
         self.view.addSubview(calenderDayOverviewTableView)
         self.view.addSubview(calendarView)
@@ -265,7 +330,12 @@ class ViewController: UIViewController {
 
 extension ViewController: UICalendarViewDelegateProtocol {
     func calendarView(_ calendarView: UICalendarView, didSelectedDate selectedDate: Date) {
-        print("selectedDate: \(selectedDate)")
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        self.title = dateFormatter.string(from: selectedDate)
+        calenderDayOverviewTableView.data = eventCtrl.getEvents(forDate: selectedDate)
+        calenderDayOverviewTableView.selectedDate = selectedDate
+        calenderDayOverviewTableView.reloadData()
     }
 
     func calenderView(_ calendarView: UICalendarView, touchedNextMonthButton: UIButton) {
@@ -287,5 +357,3 @@ PlaygroundPage.current.liveView = navCtrl
 
 
 
-
-print(str)
