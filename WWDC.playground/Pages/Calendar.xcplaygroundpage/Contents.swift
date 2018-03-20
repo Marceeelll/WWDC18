@@ -219,23 +219,6 @@ PlaygroundPage.current.liveView = navCtrl
 
 
 
-protocol MyProtocol {
-    static var allItems: [MyProtocol] { get set }
-}
-
-enum Enum1: MyProtocol {
-    case option1
-    case option2
-    static let allItems: [MyProtocol] = [Enum1]
-}
-
-enum Enum2 {
-    case option3
-    case option4
-}
-
-
-
 
 
 

@@ -168,12 +168,10 @@ public class UIEmitterAttributeTableViewSliderCell: UIEmitterAttributeTableViewC
         attributeTitleLabel.text?.append(" \(selectedFormattedNumber)")
     }
     
-    public func initializeCell(withAttribute attribute: Attribute) {
+    public func initializeCell(withAttribute attribute: AttributeValueRange) {
         self.attribute = attribute
-        if case AttributeType.valueRange(let min, let max) = attribute.type {
-            attribetuSlider.minimumValue = min
-            attribetuSlider.maximumValue = max
-        }
+        attribetuSlider.minimumValue = attribute.min
+        attribetuSlider.maximumValue = attribute.max
     }
 }
 
@@ -261,21 +259,20 @@ public class UIEmitterAttributeTableViewTwofoldValueCell: UIEmitterAttributeTabl
         let selectedNumber2 = inputSlider2.value
         let selectedFormattedNumber1 = String(format: "%.2f", arguments: [selectedNumber1])
         let selectedFormattedNumber2 = String(format: "%.2f", arguments: [selectedNumber2])
-        if case AttributeType.twofoldValueRange(let name1, _, _, let name2, _, _) = attribute.type {
-            inputTextLabel1.text = "\(name1) (\(selectedFormattedNumber1))"
-            inputTextLabel2.text = "\(name2) (\(selectedFormattedNumber2))"
+        if let attribute = attribute as? AttributeTwoValueRange {
+            inputTextLabel1.text = "\(attribute.value1Name) (\(selectedFormattedNumber1))"
+            inputTextLabel2.text = "\(attribute.value2Name) (\(selectedFormattedNumber2))"
         }
     }
     
-    public func initializeCell(withAttribute attribute: Attribute) {
+    public func initializeCell(withAttribute attribute: AttributeTwoValueRange) {
         self.attribute = attribute
-        if case AttributeType.twofoldValueRange(_, let min1, let max1,
-                                                _, let min2, let max2) = attribute.type {
-            inputSlider1.minimumValue = min1
-            inputSlider1.maximumValue = max1
-            inputSlider2.minimumValue = min2
-            inputSlider2.maximumValue = max2
-        }
+        
+        inputSlider1.minimumValue = attribute.min1
+        inputSlider1.maximumValue = attribute.max1
+        inputSlider2.minimumValue = attribute.min2
+        inputSlider2.maximumValue = attribute.max2
+        
         displaySelectedValue()
     }
     
@@ -357,7 +354,7 @@ public class UIEmitterPreviewView: UIView {
         
         emitter.emitterCells = cells
         
-        // self.layer.addSublayer(emitter)
+        self.layer.addSublayer(emitter)
     }
 }
 
@@ -701,26 +698,26 @@ public protocol Attribute {
     var type: AttributeType { get set }
 }
 
-struct AttributeSelection: Attribute {
-    var title: String
-    var type: AttributeType
-    var selections: [String]
+public struct AttributeSelection: Attribute {
+    public var title: String
+    public var type: AttributeType
+    public var selections: [String]
     
-    init(title: String, type: AttributeType, selections: [String]) {
-        self.selections = selections
+    public init(title: String, type: AttributeType, selections: [String]) {
+        self.title = title
         self.type = type
         self.selections = selections
     }
 }
 
 
-struct AttributeValueRange: Attribute {
-    var title: String
-    var type: AttributeType
-    var min: Float
-    var max: Float
+public struct AttributeValueRange: Attribute {
+    public var title: String
+    public var type: AttributeType
+    public var min: Float
+    public var max: Float
     
-    init(title: String, type: AttributeType, min: Float, max: Float) {
+    public init(title: String, type: AttributeType, min: Float, max: Float) {
         self.title = title
         self.type = type
         self.min = min
@@ -728,22 +725,23 @@ struct AttributeValueRange: Attribute {
     }
 }
 
-struct AttributeTwoValueRange: Attribute {
-    var title: String
-    var type: AttributeType
-    var value1Name: String
-    var min1: Float
-    var max1: Float
-    var value2Name: String
-    var min2: Float
-    var max2: Float
+public struct AttributeTwoValueRange: Attribute {
+    public var title: String
+    public var type: AttributeType
+    public var value1Name: String
+    public var min1: Float
+    public var max1: Float
+    public var value2Name: String
+    public var min2: Float
+    public var max2: Float
     
-    init(title: String, type: AttributeType, value1Name: String, min1: Float, max1: Float,
+    public init(title: String, type: AttributeType, value1Name: String, min1: Float, max1: Float,
          value2Name: String, min2: Float, max2: Float) {
         self.title = title
         self.type = type
+        self.value1Name = value1Name
         self.min1 = min1
-        self.min2 = min2
+        self.max1 = min2
         self.value2Name = value2Name
         self.min2 = min2
         self.max2 = max2
@@ -1001,12 +999,11 @@ public class UIEmitterCellAttributesFoldableTableView: UIFoldableTableView<Attri
         let element = tableView.getElement(atIndexPath: indexPath)
         let attribute = element.data
         
-        switch attribute.type {
-        case .valueRange:
+        if let attributeValueRange = attribute as? AttributeValueRange {
             let cell = tableView.dequeueReusableCell(withIdentifier: "slider_cell",
                                                      for: indexPath) as! UIEmitterAttributeTableViewSliderCell
             cell.delegate = self
-            cell.initializeCell(withAttribute: attribute)
+            cell.initializeCell(withAttribute: attributeValueRange)
             
             var sliderValue: Float = 0.0
             
@@ -1042,28 +1039,30 @@ public class UIEmitterCellAttributesFoldableTableView: UIFoldableTableView<Attri
                     
                 default: break
                 }
+                
+                cell.attribetuSlider.value = sliderValue
+                cell.displaySelectedValue()
+                
+                return cell
             }
-            
-            cell.attribetuSlider.value = sliderValue
-            cell.displaySelectedValue()
-            
-            return cell
-        case .twofoldValueRange:
+        } else if let attributeTwoValueRange = attribute as? AttributeTwoValueRange {
             let cell = tableView.dequeueReusableCell(withIdentifier: "twoFoldValue_cell",
                                                      for: indexPath) as! UIEmitterAttributeTableViewTwofoldValueCell
             cell.delegate = self
-            cell.initializeCell(withAttribute: attribute)
+            cell.initializeCell(withAttribute: attributeTwoValueRange)
             
             var sliderValue1: Float = 0.0
             var sliderValue2: Float = 0.0
             
             if let emitterCell = emitterCell {
+                
                 switch attribute {
-                case EmitterCellEmitterConentAttribute.contentsRect:
+                case EmitterCellContentAttribute.contentsRect:
                     sliderValue1 = Float(emitterCell.contentsRect.width)
                     sliderValue2 = Float(emitterCell.contentsRect.height)
                 default: break
                 }
+                
             }
             
             cell.inputSlider1.value = sliderValue1
@@ -1071,8 +1070,7 @@ public class UIEmitterCellAttributesFoldableTableView: UIFoldableTableView<Attri
             cell.displaySelectedValue()
             
             return cell
-            
-        case .selection:
+        } else if let _ = attribute as? AttributeSelection {
             let cell = tableView.dequeueReusableCell(withIdentifier: "basic_cell", for: indexPath) as! UIEmitterAttributeTableViewBasicCell
             
             cell.attributeTitleLabel.text = attribute.title
@@ -1094,6 +1092,7 @@ public class UIEmitterCellAttributesFoldableTableView: UIFoldableTableView<Attri
             
             return cell
         }
+        return UITableViewCell()
     }
 }
 
@@ -1137,7 +1136,7 @@ extension UIEmitterCellAttributesFoldableTableView: UIEmitterAttributeTableViewC
     
     public func twoFoldedValueChanged(newValue1: Float, newValue2: Float, onAttribute attribute: Attribute) {
         switch attribute {
-        case EmitterCellEmitterConentAttribute.contentsRect:
+        case EmitterCellContentAttribute.contentsRect:
             emitterCell?.contentsRect = CGRect(x: 0.0, y: 0.0,
                                                width: CGFloat(newValue1), height: CGFloat(newValue2))
         default: break
@@ -1429,22 +1428,21 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
         let element = tableView.getElement(atIndexPath: indexPath)
         let attribute = element.data
         
-        switch attribute.type {
-        case .valueRange:
+        if let attributeValueRange = attribute as? AttributeValueRange {
             let cell = tableView.dequeueReusableCell(withIdentifier: "slider_cell",
                                                      for: indexPath) as! UIEmitterAttributeTableViewSliderCell
             cell.delegate = self
             cell.attribute = attribute
-            cell.initializeCell(withAttribute: attribute)
+            cell.initializeCell(withAttribute: attributeValueRange)
             
             var sliderValue: Float = 0.0
             
             switch attribute {
-            case EmitterCellAttribute.seed: sliderValue = Float(emitter.seed)
-            case EmitterCellAttribute.spin: sliderValue = emitter.spin
-            case EmitterCellAttribute.velocity: sliderValue = emitter.velocity
-            case EmitterCellAttribute.birthRate: sliderValue = emitter.birthRate
-            case EmitterCellAttribute.lifetime: sliderValue = emitter.lifetime
+            case EmitterLayerCellAttribute.seed: sliderValue = Float(emitter.seed)
+            case EmitterLayerCellAttribute.spin: sliderValue = emitter.spin
+            case EmitterLayerCellAttribute.velocity: sliderValue = emitter.velocity
+            case EmitterLayerCellAttribute.birthRate: sliderValue = emitter.birthRate
+            case EmitterLayerCellAttribute.lifetime: sliderValue = emitter.lifetime
             default: break
             }
             
@@ -1452,21 +1450,21 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
             cell.displaySelectedValue()
             
             return cell
-        case .twofoldValueRange:
+        } else if let attributeTwoValueRange = attribute as? AttributeTwoValueRange {
             let cell = tableView.dequeueReusableCell(withIdentifier: "twoFoldValue_cell",
                                                      for: indexPath) as! UIEmitterAttributeTableViewTwofoldValueCell
             cell.delegate = self
             
-            cell.initializeCell(withAttribute: attribute)
+            cell.initializeCell(withAttribute: attributeTwoValueRange)
             
             var sliderValue1: Float = 0.0
             var sliderValue2: Float = 0.0
             
             switch attribute {
-            case EmitterGeometryAttribute.emitterPosition:
+            case EmitterLayerGeometryAttribute.emitterPosition:
                 sliderValue1 = Float(emitter.emitterPosition.x)
                 sliderValue2 = Float(emitter.emitterPosition.y)
-            case EmitterGeometryAttribute.emitterSize:
+            case EmitterLayerGeometryAttribute.emitterSize:
                 sliderValue1 = Float(emitter.emitterSize.width)
                 sliderValue2 = Float(emitter.emitterSize.height)
             default: break
@@ -1477,7 +1475,7 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
             cell.displaySelectedValue()
             
             return cell
-        case .selection:
+        } else if let _ = attribute as? AttributeSelection {
             let cell = tableView.dequeueReusableCell(withIdentifier: "basic_cell", for: indexPath) as! UIEmitterAttributeTableViewBasicCell
             
             cell.attributeTitleLabel.text = attribute.title
@@ -1486,11 +1484,11 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
             var value: String = ""
             
             switch attribute {
-            case EmitterGeometryAttribute.renderMode:
+            case EmitterLayerGeometryAttribute.renderMode:
                 value = emitter.renderMode
-            case EmitterGeometryAttribute.emitterShape:
+            case EmitterLayerGeometryAttribute.emitterShape:
                 value = emitter.emitterShape
-            case EmitterCellAttribute.emitterMode:
+            case EmitterLayerCellAttribute.emitterMode:
                 value = emitter.emitterMode
             default: break
             }
@@ -1498,6 +1496,8 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
             cell.descriptionLabel.text = value
             
             return cell
+        } else {
+            return UITableViewCell()
         }
     }
 }
@@ -1506,17 +1506,17 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
 extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellDelegate {
     func valueChanged(newValue: Float, onAttribute attribute: Attribute) {
         switch attribute {
-        case EmitterCellAttribute.scale:
+        case EmitterLayerCellAttribute.scale:
             emitter.scale = newValue
-        case EmitterCellAttribute.seed:
+        case EmitterLayerCellAttribute.seed:
             emitter.seed = UInt32(newValue)
-        case EmitterCellAttribute.spin:
+        case EmitterLayerCellAttribute.spin:
             emitter.spin = newValue
-        case EmitterCellAttribute.velocity:
+        case EmitterLayerCellAttribute.velocity:
             emitter.velocity = newValue
-        case EmitterCellAttribute.birthRate:
+        case EmitterLayerCellAttribute.birthRate:
             emitter.birthRate = newValue
-        case EmitterCellAttribute.lifetime:
+        case EmitterLayerCellAttribute.lifetime:
             emitter.lifetime = newValue
         default: break
         }
@@ -1524,10 +1524,10 @@ extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellD
     
     func twoFoldedValueChanged(newValue1: Float, newValue2: Float, onAttribute attribute: Attribute) {
         switch attribute {
-        case EmitterGeometryAttribute.emitterPosition:
+        case EmitterLayerGeometryAttribute.emitterPosition:
             emitter.emitterPosition = CGPoint(x: CGFloat(newValue1),
                                               y: CGFloat(newValue2))
-        case EmitterGeometryAttribute.emitterSize:
+        case EmitterLayerGeometryAttribute.emitterSize:
             emitter.emitterSize = CGSize(width: CGFloat(newValue1),
                                          height: CGFloat(newValue2))
         default: break
@@ -1809,11 +1809,11 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
             
             let attribute = element.data
             switch attribute {
-            case EmitterGeometryAttribute.renderMode:
+            case EmitterLayerGeometryAttribute.renderMode:
                 emitterPreview.emitter.renderMode = attributeName
-            case EmitterGeometryAttribute.emitterShape:
+            case EmitterLayerGeometryAttribute.emitterShape:
                 emitterPreview.emitter.emitterShape = attributeName
-            case EmitterCellAttribute.emitterMode:
+            case EmitterLayerCellAttribute.emitterMode:
                 emitterPreview.emitter.emitterMode = attributeName
             default: break
             }
@@ -1932,8 +1932,8 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
     
     func createAndAssignEmitterTableViewData() {
         let sections: [String] = ["Emitter Geometry", "Emitter Cell Attribute Multipliers"]
-        let attributes: [[Attribute]] = [EmitterGeometryAttribute.allAttributes,
-                                         EmitterCellAttribute.allAttributes]
+        let attributes: [[Attribute]] = [createEmitterLayerGeometryAttributes(),
+                                         createEmitterLayerCellAttributes()]
         
         var result: [[FoldableData<Attribute, String>]] = []
         
@@ -1941,13 +1941,16 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
             var data: [FoldableData<Attribute, String>] = []
             for attribute in attributeArrray {
                 let foldableData: FoldableData<Attribute, String>!
-                switch attribute.type {
-                case .selection(let selections):
-                    foldableData = FoldableData<Attribute, String>(data: attribute, foldableItems: selections)
-                default:
-                    foldableData = FoldableData<Attribute, String>(data: attribute)
+                if let attributeSelection = attribute as? AttributeSelection {
+                    foldableData = FoldableData<Attribute, String>(data: attributeSelection, foldableItems: attributeSelection.selections)
+                    data.append(foldableData)
+                } else if let attributeValueRange = attribute as? AttributeValueRange {
+                    foldableData = FoldableData<Attribute, String>(data: attributeValueRange)
+                    data.append(foldableData)
+                } else if let attributeTwoValueRange = attribute as? AttributeTwoValueRange {
+                    foldableData = FoldableData<Attribute, String>(data: attributeTwoValueRange)
+                    data.append(foldableData)
                 }
-                data.append(foldableData)
             }
             result.append(data)
         }
@@ -1961,10 +1964,10 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
                                   "Setting Emitter Cell Visual Attributes",
                                   "Emitter Cell Motion Attributes",
                                   "Emission Cell Temporal Attributes"]
-        let attributes: [[Attribute]] = [EmitterCellEmitterConentAttribute.allAttributes,
-                                         EmitterCellVisualAttribute.allAttributes,
-                                         EmitterCellMotionAttribute.allAttributes,
-                                         EmitterCellTemporalAttribute.allAttributes]
+        let attributes: [[Attribute]] = [createEmitterCellContentAttributes(),
+                                         createEmitterCellVisualAttributes(),
+                                         createEmitterCellMotionAttributes(),
+                                         createEmitterCellTemporalAttributes()]
         
         var result: [[FoldableData<Attribute, String>]] = []
         
@@ -1972,14 +1975,16 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
             var data: [FoldableData<Attribute, String>] = []
             for attribute in attributeArrray {
                 let foldableData: FoldableData<Attribute, String>!
-                switch attribute.type {
-                case .selection(let selections):
-                    foldableData = FoldableData<Attribute, String>(data: attribute, foldableItems: selections)
-                    print(selections)
-                default:
-                    foldableData = FoldableData<Attribute, String>(data: attribute)
+                if let attributeSelection = attribute as? AttributeSelection {
+                    foldableData = FoldableData<Attribute, String>(data: attributeSelection, foldableItems: attributeSelection.selections)
+                    data.append(foldableData)
+                } else if let attributeValueRange = attribute as? AttributeValueRange {
+                    foldableData = FoldableData<Attribute, String>(data: attributeValueRange)
+                    data.append(foldableData)
+                } else if let attributeTwoValueRange = attribute as? AttributeTwoValueRange {
+                    foldableData = FoldableData<Attribute, String>(data: attributeTwoValueRange)
+                    data.append(foldableData)
                 }
-                data.append(foldableData)
             }
             result.append(data)
         }
