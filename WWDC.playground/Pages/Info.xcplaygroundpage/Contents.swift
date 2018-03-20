@@ -44,10 +44,11 @@
  # Used Technolgy
  
  ### CAEmitterLayer
+ Wird verwendet um die Partikel Animationen für die Auswahl der einzelnen Events darzustellen. So wird beispielsweise bei der Auswahl eines Geburtstags Konfetti über den Display geschossen.
  
  ### UIViewPropertyAnimator
+ Damit wird das ButtenMenu animiert. Der Vorteil davon im vergleich zu UIView.animate ist, das die UIElemente weiterhin touchable sind.
  
- ### UIKit & Foundations
  
  ### CAKeyframeAnimation
  The CAKeyframeAnimation objects animates the apple logo to the calculatet CGPath.
@@ -58,6 +59,7 @@
  ### Calendar
  You can either do ...
  
+  # Annotation
  Running the app for the first time might be a little bit of a wait, but it's **well worth the wait** 😄
 
  [Go to Demo](@next)

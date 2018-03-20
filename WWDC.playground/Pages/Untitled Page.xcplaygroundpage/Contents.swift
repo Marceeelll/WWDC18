@@ -6,20 +6,22 @@ import PlaygroundSupport
 public class ParticleController {
     private var layer: CALayer
     private var particle: CAEmitterLayer?
+    private var isParticleAnimationRunning = false
     
     init(layer: CALayer) {
         self.layer = layer
     }
     
-    func startParticleAnimation(forEventType eventType: EventType, andEndAfterTime delay: Double) {
-        if particle != nil {
-            particle?.removeFromSuperlayer()
+    func startParticleAnimation(forEventType eventType: EventType) {
+        let stopDelay: Double = 5.0
+        if particle == nil {
+            particle = getEmitter(forEventType: eventType)
         }
-        particle = getEmitter(forEventType: eventType)
-        if let particle = particle {
+        if let particle = particle, !isParticleAnimationRunning {
+            isParticleAnimationRunning = true
             particle.beginTime = CACurrentMediaTime()
             layer.addSublayer(particle)
-            stopParticleAnimation(stopDeleay: delay)
+            stopParticleAnimation(stopDeleay: stopDelay)
         }
     }
     
@@ -36,70 +38,78 @@ public class ParticleController {
                     DispatchQueue.main.asyncAfter(deadline: .now() + Double(maxLifeTime), execute: {
                         particle.removeFromSuperlayer()
                         self.particle = nil
+                        self.isParticleAnimationRunning = false
                     })
                 }
             }
-            
         }
-//        let lifetimes = particle.emitterCells?.map({ (cell) -> Float in
-//            return cell.lifetime
-//        })
-//        if let maxLifeTime = lifetimes?.max() {
-//            print(maxLifeTime)
-//            DispatchQueue.main.asyncAfter(deadline: .now() + Double(maxLifeTime), execute: {
-//                self.particle.removeFromSuperlayer()
-//            })
-//        }
     }
     
-    func getEmitter(forEventType eventType: EventType) -> CAEmitterLayer {
-        let emitter = CAEmitterLayer()
-        emitter.emitterPosition = CGPoint(x: 320.0/2.0, y: 100)
-        emitter.emitterShape = kCAEmitterLayerLine
-        emitter.emitterSize = CGSize(width: 300, height: 30)
-        
-        var cells: [CAEmitterCell] = []
-        
-        for index in 0..<3 {
-            let cell = CAEmitterCell()
+    func getEmitter(forEventType eventType: EventType) -> CAEmitterLayer? {
+        switch eventType {
+        case .birthday:
+            print("BIRTHDAY PARTICLES")
+            let emitter = CAEmitterLayer()
+            emitter.emitterPosition = CGPoint(x: 320.0/2.0, y: 100)
+            emitter.emitterShape = kCAEmitterLayerLine
+            emitter.emitterSize = CGSize(width: 300, height: 30)
             
-            let intensity = Float(0.3)
+            var cells: [CAEmitterCell] = []
             
-//            cell.birthRate = 1.5
-            cell.birthRate = 5
-            cell.lifetime = 10
-            cell.lifetimeRange = 0
-            cell.velocity = CGFloat(350.0 * intensity)
-            cell.velocityRange = CGFloat(80.0 * intensity)
-            cell.emissionLongitude = CGFloat.pi
-            cell.emissionRange = CGFloat.pi/4
-            cell.spin = CGFloat(3.5 * intensity)
-            cell.spinRange = CGFloat(4.0 * intensity)
-            cell.scaleRange = CGFloat(intensity)
-            cell.scaleSpeed = CGFloat(-0.1 * intensity)
-            
-            cell.redRange = 200
-            cell.greenRange = 200
-            cell.alphaRange = 1
-            cell.alphaSpeed = 1
-            
-            switch index%3 {
-            case 0: cell.contents = UIImage(named: "confetti_1.png")!.cgImage
-            case 1: cell.contents = UIImage(named: "confetti_2.png")!.cgImage
-            case 2: cell.contents = UIImage(named: "confetti_3.png")!.cgImage
-            default:
-                break
+            for index in 0..<3 {
+                let cell = CAEmitterCell()
+                
+                let intensity = Float(0.3)
+                
+                //            cell.birthRate = 1.5
+                cell.birthRate = 5
+                cell.lifetime = 10
+                cell.lifetimeRange = 0
+                cell.velocity = CGFloat(350.0 * intensity)
+                cell.velocityRange = CGFloat(80.0 * intensity)
+                cell.emissionLongitude = CGFloat.pi
+                cell.emissionRange = CGFloat.pi/4
+                cell.spin = CGFloat(3.5 * intensity)
+                cell.spinRange = CGFloat(4.0 * intensity)
+                cell.scaleRange = CGFloat(intensity)
+                cell.scaleSpeed = CGFloat(-0.1 * intensity)
+                
+                cell.redRange = 200
+                cell.greenRange = 200
+                cell.alphaRange = 1
+                cell.alphaSpeed = 1
+                
+                switch index%3 {
+                case 0: cell.contents = UIImage(named: "confetti_1.png")!.cgImage
+                case 1: cell.contents = UIImage(named: "confetti_2.png")!.cgImage
+                case 2: cell.contents = UIImage(named: "confetti_3.png")!.cgImage
+                default:
+                    break
+                }
+                
+                cells.append(cell)
             }
             
-            cells.append(cell)
+            emitter.emitterCells = cells
+            
+            return emitter
+        case .christmas:
+            print("CHRISTMAS PARTICLES")
+        case .wwdc:
+            print("WWDC PARTICLES")
+        case .newYear:
+            print("NEW YEAR PARTICLES")
+        case .important:
+            print("IMPORTANT PARTICLES")
+        case .holiday:
+            print("HOLIDAY PARTICLES")
+        case .none:
+            print("NONE PARTICLES :D")
         }
         
-        emitter.emitterCells = cells
-        
-        return emitter
+        return nil
     }
 }
-
 
 struct Event {
     var title: String
@@ -158,6 +168,7 @@ enum EventType {
     case newYear
     case holiday
     case important
+    case none
     
     var symbol: String {
         switch self {
@@ -167,17 +178,19 @@ enum EventType {
         case .newYear: return "🎊"
         case .holiday: return "🌴"
         case .important: return "⚠️"
+        case .none: return ""
         }
     }
     
     var color: UIColor {
         switch self {
-        case .birthday: return UIColor.purple
-        case .christmas: return UIColor.red
-        case .wwdc: return UIColor.orange
-        case .newYear: return UIColor.cyan
-        case .holiday: return UIColor.green
-        case .important: return UIColor.yellow
+        case .birthday: return AppColor.Apple.purple
+        case .christmas: return AppColor.Apple.red
+        case .wwdc: return AppColor.Apple.orange
+        case .newYear: return AppColor.Apple.blue
+        case .holiday: return AppColor.Apple.green
+        case .important: return AppColor.Apple.yellow
+        case .none: return UIColor.darkGray
         }
     }
 }
@@ -335,9 +348,16 @@ class UICalendarDayOverviewTableViewCell: UITableViewCell {
     
 }
 
+
+protocol UICalendarDayOverviewTableViewDelegate {
+    func overviewTableView(_ tableView: UICalendarDayOverviewTableView, didSelectedEvent event: Event)
+}
+
 class UICalendarDayOverviewTableView: UITableView {
     var data: [Event] = []
     var selectedDate: Date?
+    
+    var overViewDelegate: UICalendarDayOverviewTableViewDelegate?
     
     override init(frame: CGRect, style: UITableViewStyle) {
         super.init(frame: frame, style: style)
@@ -382,6 +402,8 @@ extension UICalendarDayOverviewTableView: UITableViewDataSource {
 extension UICalendarDayOverviewTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        let selectedEvent = getEvent(atIndexPath: indexPath)
+        overViewDelegate?.overviewTableView(self, didSelectedEvent: selectedEvent)
     }
 }
 
@@ -426,6 +448,7 @@ class ViewController: UIViewController {
         let today = Date()
         calenderDayOverviewTableView.data = eventCtrl.getEvents(forDate: today)
         calenderDayOverviewTableView.selectedDate = today
+        calenderDayOverviewTableView.overViewDelegate = self
         
         self.view.addSubview(calenderDayOverviewTableView)
         self.view.addSubview(calendarView)
@@ -483,16 +506,19 @@ extension ViewController: UICalendarViewDelegateProtocol {
         calenderDayOverviewTableView.data = eventsOnSelectedDay
         calenderDayOverviewTableView.selectedDate = selectedDate
         calenderDayOverviewTableView.reloadData()
-        
-        if !eventsOnSelectedDay.isEmpty {
-            particleCtrl.startParticleAnimation(forEventType: .birthday, andEndAfterTime: 5.0)
-        }
     }
 
     func calenderView(_ calendarView: UICalendarView, touchedNextMonthButton: UIButton) {
     }
 
     func calenderView(_ calendarView: UICalendarView, touchedPreviousMonthButton: UIButton) {
+    }
+}
+
+
+extension ViewController: UICalendarDayOverviewTableViewDelegate {
+    func overviewTableView(_ tableView: UICalendarDayOverviewTableView, didSelectedEvent event: Event) {
+        particleCtrl.startParticleAnimation(forEventType: event.type)
     }
 }
 
