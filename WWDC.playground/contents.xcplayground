@@ -2,8 +2,9 @@
 <playground version='6.0' target-platform='ios' display-mode='raw' executeOnSourceChanges='false'>
     <pages>
         <page name='WelcomeAnimation'/>
-        <page name='Untitled Page'/>
+        <page name='Calendar'/>
         <page name='Info'/>
         <page name='Demo'/>
+        <page name='Particle Creator'/>
     </pages>
 </playground>
