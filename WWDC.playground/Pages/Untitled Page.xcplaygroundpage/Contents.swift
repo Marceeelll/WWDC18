@@ -3,6 +3,104 @@
 import UIKit
 import PlaygroundSupport
 
+public class ParticleController {
+    private var layer: CALayer
+    private var particle: CAEmitterLayer?
+    
+    init(layer: CALayer) {
+        self.layer = layer
+    }
+    
+    func startParticleAnimation(forEventType eventType: EventType, andEndAfterTime delay: Double) {
+        if particle != nil {
+            particle?.removeFromSuperlayer()
+        }
+        particle = getEmitter(forEventType: eventType)
+        if let particle = particle {
+            particle.beginTime = CACurrentMediaTime()
+            layer.addSublayer(particle)
+            stopParticleAnimation(stopDeleay: delay)
+        }
+    }
+    
+    private func stopParticleAnimation(stopDeleay: Double) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + stopDeleay) {
+            if let particle = self.particle {
+                particle.birthRate = 0.0
+                
+                let lifetimes = particle.emitterCells?.map({ (cell) -> Float in
+                    return cell.lifetime
+                })
+                if let maxLifeTime = lifetimes?.max() {
+                    print(maxLifeTime)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(maxLifeTime), execute: {
+                        particle.removeFromSuperlayer()
+                        self.particle = nil
+                    })
+                }
+            }
+            
+        }
+//        let lifetimes = particle.emitterCells?.map({ (cell) -> Float in
+//            return cell.lifetime
+//        })
+//        if let maxLifeTime = lifetimes?.max() {
+//            print(maxLifeTime)
+//            DispatchQueue.main.asyncAfter(deadline: .now() + Double(maxLifeTime), execute: {
+//                self.particle.removeFromSuperlayer()
+//            })
+//        }
+    }
+    
+    func getEmitter(forEventType eventType: EventType) -> CAEmitterLayer {
+        let emitter = CAEmitterLayer()
+        emitter.emitterPosition = CGPoint(x: 320.0/2.0, y: 100)
+        emitter.emitterShape = kCAEmitterLayerLine
+        emitter.emitterSize = CGSize(width: 300, height: 30)
+        
+        var cells: [CAEmitterCell] = []
+        
+        for index in 0..<3 {
+            let cell = CAEmitterCell()
+            
+            let intensity = Float(0.3)
+            
+//            cell.birthRate = 1.5
+            cell.birthRate = 5
+            cell.lifetime = 10
+            cell.lifetimeRange = 0
+            cell.velocity = CGFloat(350.0 * intensity)
+            cell.velocityRange = CGFloat(80.0 * intensity)
+            cell.emissionLongitude = CGFloat.pi
+            cell.emissionRange = CGFloat.pi/4
+            cell.spin = CGFloat(3.5 * intensity)
+            cell.spinRange = CGFloat(4.0 * intensity)
+            cell.scaleRange = CGFloat(intensity)
+            cell.scaleSpeed = CGFloat(-0.1 * intensity)
+            
+            cell.redRange = 200
+            cell.greenRange = 200
+            cell.alphaRange = 1
+            cell.alphaSpeed = 1
+            
+            switch index%3 {
+            case 0: cell.contents = UIImage(named: "confetti_1.png")!.cgImage
+            case 1: cell.contents = UIImage(named: "confetti_2.png")!.cgImage
+            case 2: cell.contents = UIImage(named: "confetti_3.png")!.cgImage
+            default:
+                break
+            }
+            
+            cells.append(cell)
+        }
+        
+        emitter.emitterCells = cells
+        
+        return emitter
+    }
+}
+
+
 struct Event {
     var title: String
     var startDate: Date
@@ -110,7 +208,7 @@ class EventController {
                         endDate: Date(timeIntervalSince1970: 1522558800),
                         type: .important, isFullTime: true),
                   Event(title: "WWDC 2018",
-                        startDate: Date(timeIntervalSince1970: 1528099200),
+                        startDate: Date(timeIntervalSince1970: 1528108860),
                         endDate: Date(timeIntervalSince1970: 1528480800),
                         type: .wwdc, isFullTime: false),
                   Event(title: "New Year 2017",
@@ -302,6 +400,7 @@ class ViewController: UIViewController {
     var calenderDayOverviewTableView = UICalendarDayOverviewTableView()
     
     let eventCtrl = EventController()
+    var particleCtrl: ParticleController!
 
     var dataSource: UICalendarViewDataSource! {
         didSet {
@@ -316,6 +415,7 @@ class ViewController: UIViewController {
         
         eventCtrl.createDemonstrationEvents()
         
+        particleCtrl = ParticleController(layer: self.view.layer)
         calenderDayOverviewTableView.register(UICalendarDayOverviewTableViewCell.self, forCellReuseIdentifier: "cell")
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(showAddNewEntryViewController))
@@ -379,9 +479,14 @@ extension ViewController: UICalendarViewDelegateProtocol {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
         self.title = dateFormatter.string(from: selectedDate)
-        calenderDayOverviewTableView.data = eventCtrl.getEvents(forDate: selectedDate)
+        let eventsOnSelectedDay = eventCtrl.getEvents(forDate: selectedDate)
+        calenderDayOverviewTableView.data = eventsOnSelectedDay
         calenderDayOverviewTableView.selectedDate = selectedDate
         calenderDayOverviewTableView.reloadData()
+        
+        if !eventsOnSelectedDay.isEmpty {
+            particleCtrl.startParticleAnimation(forEventType: .birthday, andEndAfterTime: 5.0)
+        }
     }
 
     func calenderView(_ calendarView: UICalendarView, touchedNextMonthButton: UIButton) {
