@@ -3,61 +3,67 @@
 import UIKit
 import PlaygroundSupport
 
+struct Particle {
+    var emitter: CAEmitterLayer
+    var startDelay: Double
+    var stopDelay: Double
+}
+
 public class ParticleController {
     private var layer: CALayer
-    private var particles: [CAEmitterLayer] = []
+    private var particles: [Particle] = []
     private var isParticleAnimationRunning = false
     private let simulatorScreenWidth: CGFloat = 320
     private let simulatorScreenCenterPoint = CGPoint(x: 320.0/2.0, y: 100)
+    private var maxLifeTime: Double = 0.0
     
     init(layer: CALayer) {
         self.layer = layer
     }
     
     func startParticleAnimation(forEventType eventType: EventType) {
-        var stopDelay: Double = 5.0
-        if eventType == .important {
-            stopDelay = 0.05
-        }
         if particles.isEmpty {
-            if let particle = getEmitter(forEventType: eventType) {
-                particles.append(particle)
-            }
-            if let particle = getEmitter(forEventType: eventType) {
-                particles.append(particle)
-            }
+            particles = getParticles(forEventType: .important)
         }
         if !particles.isEmpty && !isParticleAnimationRunning {
             isParticleAnimationRunning = true
+            
             for particle in particles {
-                particle.beginTime = CACurrentMediaTime()
-                layer.addSublayer(particle)
-                stopParticleAnimation(stopDeleay: stopDelay)
+                let maxCellLifeTimes = particle.emitter.emitterCells?.map({ (cell) -> Float in
+                    return cell.lifetime
+                })
+                if let maxCellLifeTime = maxCellLifeTimes?.first {
+                    let lifeTime = Double(maxCellLifeTime) + particle.stopDelay
+                    maxLifeTime = max(maxLifeTime, lifeTime)
+                }
+            }
+            
+            for index in 0..<particles.count {
+                let particle = particles[index]
+                print("ENTERED")
+                self.group.enter()
+                DispatchQueue.main.asyncAfter(deadline: .now() + particle.startDelay, execute: {
+                    particle.emitter.beginTime = CACurrentMediaTime()
+                    self.layer.addSublayer(particle.emitter)
+                    self.stopParticleAnimation(atIndex: index, withStopDeleay: particle.stopDelay)
+                })
             }
         }
     }
     
     let group = DispatchGroup()
-    private func stopParticleAnimation(stopDeleay: Double) {
+    private func stopParticleAnimation(atIndex: Int, withStopDeleay stopDelay: Double) {
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + stopDeleay) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + stopDelay) {
             for particle in self.particles {
-                particle.birthRate = 0.0
-                print("ENTERED")
-                self.group.enter()
+                particle.emitter.birthRate = 0.0
                 
-                let lifetimes = particle.emitterCells?.map({ (cell) -> Float in
-                    return cell.lifetime
+                DispatchQueue.main.asyncAfter(deadline: .now() + self.maxLifeTime, execute: {
+                    particle.emitter.removeFromSuperlayer()
+                    print("--LEAVE")
+                    self.group.leave()
+                    self.isParticleAnimationRunning = false
                 })
-                if let maxLifeTime = lifetimes?.max() {
-                    print(maxLifeTime)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(maxLifeTime), execute: {
-                        particle.removeFromSuperlayer()
-                        print("--LEAVE")
-                        self.group.leave()
-                        self.isParticleAnimationRunning = false
-                    })
-                }
             }
             self.group.notify(queue: DispatchQueue.main) {
                 print("All finished")
@@ -66,10 +72,44 @@ public class ParticleController {
         }
     }
     
-    func getEmitter(forEventType eventType: EventType) -> CAEmitterLayer? {
+    func getParticles(forEventType eventType: EventType) -> [Particle] {
         switch eventType {
         case .birthday:
             print("BIRTHDAY PARTICLES")
+            return []
+        case .christmas:
+            print("CHRISTMAS PARTICLES")
+            return []
+        case .wwdc:
+            print("WWDC PARTICLES")
+            return []
+        case .newYear:
+            print("NEW YEAR PARTICLES")
+            return []
+        case .important:
+            print("IMPORTANT PARTICLES")
+            var result: [Particle] = []
+            if let emitter = getEmitter(forEventType: eventType) {
+                let particle = Particle(emitter: emitter, startDelay: 1, stopDelay: 0.2)
+                result.append(particle)
+            }
+            if let emitter = getEmitter(forEventType: eventType) {
+                let particle = Particle(emitter: emitter, startDelay: 3, stopDelay: 0.2)
+                result.append(particle)
+            }
+            return result
+        case .holiday:
+            print("HOLIDAY PARTICLES")
+            return []
+        case .none:
+            print("NONE PARTICLES :D")
+            return []
+        }
+    }
+    
+    func getEmitter(forEventType eventType: EventType) -> CAEmitterLayer? {
+        switch eventType {
+        case .birthday:
             let emitter = CAEmitterLayer()
             emitter.emitterPosition = simulatorScreenCenterPoint
             emitter.emitterShape = kCAEmitterLayerLine
@@ -115,11 +155,10 @@ public class ParticleController {
             
             return emitter
         case .christmas:
-            print("CHRISTMAS PARTICLES")
+            return nil
         case .wwdc:
-            print("WWDC PARTICLES")
+            return nil
         case .newYear:
-            print("NEW YEAR PARTICLES")
             let emitter = CAEmitterLayer()
             emitter.emitterPosition = simulatorScreenCenterPoint
             emitter.emitterShape = kCAEmitterLayerLine
@@ -140,10 +179,11 @@ public class ParticleController {
                 cell.scale = 1.0
                 cells.append(cell)
             }
+            
             emitter.emitterCells = cells
+            
             return emitter
         case .important:
-            print("IMPORTANT PARTICLES")
             let emitter = CAEmitterLayer()
             emitter.emitterPosition = simulatorScreenCenterPoint
             if !particles.isEmpty {
@@ -171,15 +211,17 @@ public class ParticleController {
                 cell.scale = 0.2
                 cells.append(cell)
             }
+            
             emitter.emitterCells = cells
+            
             return emitter
         case .holiday:
             print("HOLIDAY PARTICLES")
+            return nil
         case .none:
             print("NONE PARTICLES :D")
+            return nil
         }
-        
-        return nil
     }
 }
 
