@@ -15,7 +15,8 @@ public class ParticleController {
     private var isParticleAnimationRunning = false
     private let simulatorScreenWidth: CGFloat = 320
     private let simulatorScreenCenterPoint = CGPoint(x: 320.0/2.0, y: 100)
-    private var maxLifeTime: Double = 0.0
+    private let particleRect = CGRect(x: 20, y: 60, width: 280, height: 200)
+    private var group = DispatchGroup()
     
     init(layer: CALayer) {
         self.layer = layer
@@ -28,47 +29,47 @@ public class ParticleController {
         if !particles.isEmpty && !isParticleAnimationRunning {
             isParticleAnimationRunning = true
             
-            for particle in particles {
-                let maxCellLifeTimes = particle.emitter.emitterCells?.map({ (cell) -> Float in
-                    return cell.lifetime
-                })
-                if let maxCellLifeTime = maxCellLifeTimes?.first {
-                    let lifeTime = Double(maxCellLifeTime) + particle.stopDelay
-                    maxLifeTime = max(maxLifeTime, lifeTime)
-                }
-            }
-            
             for index in 0..<particles.count {
+                group.enter()
                 let particle = particles[index]
-                print("ENTERED")
-                self.group.enter()
+                
+                // start particle animation with delay
                 DispatchQueue.main.asyncAfter(deadline: .now() + particle.startDelay, execute: {
                     particle.emitter.beginTime = CACurrentMediaTime()
                     self.layer.addSublayer(particle.emitter)
-                    self.stopParticleAnimation(atIndex: index, withStopDeleay: particle.stopDelay)
+                    self.stopParticleAnimation(ofParticle: particle)
                 })
             }
+            group.notify(queue: .main, execute: {
+                self.deleteAllParticles()
+            })
         }
     }
     
-    let group = DispatchGroup()
-    private func stopParticleAnimation(atIndex: Int, withStopDeleay stopDelay: Double) {
+    private func deleteAllParticles() {
+        var maxLifetimeResult: Float = 0.0
+        for particle in particles {
+            let maxCellLifeTimes = particle.emitter.emitterCells?.map({ (cell) -> Float in
+                return cell.lifetime
+            })
+            if let maxLifeTime = maxCellLifeTimes?.max() {
+                maxLifetimeResult = max(maxLifetimeResult, maxLifeTime)
+            }
+        }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + stopDelay) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(maxLifetimeResult)) {
+            self.isParticleAnimationRunning = false
             for particle in self.particles {
-                particle.emitter.birthRate = 0.0
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + self.maxLifeTime, execute: {
-                    particle.emitter.removeFromSuperlayer()
-                    print("--LEAVE")
-                    self.group.leave()
-                    self.isParticleAnimationRunning = false
-                })
+                particle.emitter.removeFromSuperlayer()
             }
-            self.group.notify(queue: DispatchQueue.main) {
-                print("All finished")
-                self.particles.removeAll()
-            }
+            self.particles = []
+        }
+    }
+    
+    private func stopParticleAnimation(ofParticle particle: Particle) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + particle.stopDelay) {
+            particle.emitter.birthRate = 0.0
+            self.group.leave()
         }
     }
     
@@ -89,13 +90,12 @@ public class ParticleController {
         case .important:
             print("IMPORTANT PARTICLES")
             var result: [Particle] = []
-            if let emitter = getEmitter(forEventType: eventType) {
-                let particle = Particle(emitter: emitter, startDelay: 1, stopDelay: 0.2)
-                result.append(particle)
-            }
-            if let emitter = getEmitter(forEventType: eventType) {
-                let particle = Particle(emitter: emitter, startDelay: 3, stopDelay: 0.2)
-                result.append(particle)
+            for index in 0..<5 {
+                if let emitter = getEmitter(forEventType: eventType) {
+                    let delay = Double(index)
+                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 0.2)
+                    result.append(particle)
+                }
             }
             return result
         case .holiday:
@@ -185,7 +185,7 @@ public class ParticleController {
             return emitter
         case .important:
             let emitter = CAEmitterLayer()
-            emitter.emitterPosition = simulatorScreenCenterPoint
+            emitter.emitterPosition = calculateRandomPoint(inRect: particleRect)
             if !particles.isEmpty {
                 emitter.emitterPosition = CGPoint(x: 20, y: 400)
             }
@@ -194,7 +194,7 @@ public class ParticleController {
             var cells: [CAEmitterCell] = []
             for _ in 0..<1 {
                 let cell = CAEmitterCell()
-                cell.birthRate = 10000
+                cell.birthRate = 5_000
                 cell.lifetime = 3.5
                 cell.lifetimeRange = 0
                 cell.velocity = 105
@@ -206,7 +206,7 @@ public class ParticleController {
                 cell.spin = 3.0
                 cell.yAcceleration = 30
                 cell.alphaSpeed = -0.3
-                cell.color = AppColor.Apple.yellow.cgColor
+                cell.color = getRandomColor().cgColor
                 cell.contents = UIImage(named: "confetti_2.png")!.cgImage
                 cell.scale = 0.2
                 cells.append(cell)
@@ -222,6 +222,23 @@ public class ParticleController {
             print("NONE PARTICLES :D")
             return nil
         }
+    }
+    
+    func calculateRandomPoint(inRect rect: CGRect) -> CGPoint {
+        let xSpan = rect.width - rect.minX
+        let ySpan = rect.height - rect.minY
+        
+        let randomXPosition = Int(arc4random_uniform(UInt32(xSpan))) + Int(rect.minX)
+        let randomYPosition = Int(arc4random_uniform(UInt32(ySpan))) + Int(rect.minY)
+        
+        let randomPoint = CGPoint(x: randomXPosition, y: randomYPosition)
+        return randomPoint
+    }
+    
+    func getRandomColor() -> UIColor {
+        let numberOfColors = AppColor.Apple.allColors.count
+        let randomIndex = Int(arc4random_uniform(UInt32(numberOfColors)))
+        return AppColor.Apple.allColors[randomIndex]
     }
 }
 
