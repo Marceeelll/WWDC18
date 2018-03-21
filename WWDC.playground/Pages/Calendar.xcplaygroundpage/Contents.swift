@@ -5,30 +5,46 @@ import PlaygroundSupport
 
 public class ParticleController {
     private var layer: CALayer
-    private var particle: CAEmitterLayer?
+    private var particles: [CAEmitterLayer] = []
     private var isParticleAnimationRunning = false
+    private let simulatorScreenWidth: CGFloat = 320
+    private let simulatorScreenCenterPoint = CGPoint(x: 320.0/2.0, y: 100)
     
     init(layer: CALayer) {
         self.layer = layer
     }
     
     func startParticleAnimation(forEventType eventType: EventType) {
-        let stopDelay: Double = 5.0
-        if particle == nil {
-            particle = getEmitter(forEventType: eventType)
+        var stopDelay: Double = 5.0
+        if eventType == .important {
+            stopDelay = 0.05
         }
-        if let particle = particle, !isParticleAnimationRunning {
+        if particles.isEmpty {
+            if let particle = getEmitter(forEventType: eventType) {
+                particles.append(particle)
+            }
+            if let particle = getEmitter(forEventType: eventType) {
+                particles.append(particle)
+            }
+        }
+        if !particles.isEmpty && !isParticleAnimationRunning {
             isParticleAnimationRunning = true
-            particle.beginTime = CACurrentMediaTime()
-            layer.addSublayer(particle)
-            stopParticleAnimation(stopDeleay: stopDelay)
+            for particle in particles {
+                particle.beginTime = CACurrentMediaTime()
+                layer.addSublayer(particle)
+                stopParticleAnimation(stopDeleay: stopDelay)
+            }
         }
     }
     
+    let group = DispatchGroup()
     private func stopParticleAnimation(stopDeleay: Double) {
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + stopDeleay) {
-            if let particle = self.particle {
+            for particle in self.particles {
                 particle.birthRate = 0.0
+                print("ENTERED")
+                self.group.enter()
                 
                 let lifetimes = particle.emitterCells?.map({ (cell) -> Float in
                     return cell.lifetime
@@ -37,10 +53,15 @@ public class ParticleController {
                     print(maxLifeTime)
                     DispatchQueue.main.asyncAfter(deadline: .now() + Double(maxLifeTime), execute: {
                         particle.removeFromSuperlayer()
-                        self.particle = nil
+                        print("--LEAVE")
+                        self.group.leave()
                         self.isParticleAnimationRunning = false
                     })
                 }
+            }
+            self.group.notify(queue: DispatchQueue.main) {
+                print("All finished")
+                self.particles.removeAll()
             }
         }
     }
@@ -50,7 +71,7 @@ public class ParticleController {
         case .birthday:
             print("BIRTHDAY PARTICLES")
             let emitter = CAEmitterLayer()
-            emitter.emitterPosition = CGPoint(x: 320.0/2.0, y: 100)
+            emitter.emitterPosition = simulatorScreenCenterPoint
             emitter.emitterShape = kCAEmitterLayerLine
             emitter.emitterSize = CGSize(width: 300, height: 30)
             
@@ -99,8 +120,59 @@ public class ParticleController {
             print("WWDC PARTICLES")
         case .newYear:
             print("NEW YEAR PARTICLES")
+            let emitter = CAEmitterLayer()
+            emitter.emitterPosition = simulatorScreenCenterPoint
+            emitter.emitterShape = kCAEmitterLayerLine
+            emitter.emitterSize = CGSize(width: simulatorScreenWidth, height: 1)
+            var cells: [CAEmitterCell] = []
+            for _ in 0..<16 {
+                let cell = CAEmitterCell()
+                cell.birthRate = 4
+                cell.lifetime = 10.0
+                cell.lifetimeRange = 0
+                cell.velocity = 80
+                cell.velocityRange = 120
+                cell.emissionLongitude = CGFloat.pi
+                cell.emissionRange = 0.5
+                cell.spin = 3.0
+                cell.color = UIColor.red.cgColor
+                cell.contents = UIImage(named: "confetti_1.png")!.cgImage
+                cell.scale = 1.0
+                cells.append(cell)
+            }
+            emitter.emitterCells = cells
+            return emitter
         case .important:
             print("IMPORTANT PARTICLES")
+            let emitter = CAEmitterLayer()
+            emitter.emitterPosition = simulatorScreenCenterPoint
+            if !particles.isEmpty {
+                emitter.emitterPosition = CGPoint(x: 20, y: 400)
+            }
+            emitter.emitterShape = kCAEmitterLayerPoint
+            emitter.emitterSize = CGSize(width: 1, height: 1)
+            var cells: [CAEmitterCell] = []
+            for _ in 0..<1 {
+                let cell = CAEmitterCell()
+                cell.birthRate = 10000
+                cell.lifetime = 3.5
+                cell.lifetimeRange = 0
+                cell.velocity = 105
+                cell.greenRange = 0.2
+                cell.velocityRange = 120
+                cell.emissionLongitude = 0
+                cell.emissionLatitude = -1.66
+                cell.emissionRange = 0.74
+                cell.spin = 3.0
+                cell.yAcceleration = 30
+                cell.alphaSpeed = -0.3
+                cell.color = AppColor.Apple.yellow.cgColor
+                cell.contents = UIImage(named: "confetti_2.png")!.cgImage
+                cell.scale = 0.2
+                cells.append(cell)
+            }
+            emitter.emitterCells = cells
+            return emitter
         case .holiday:
             print("HOLIDAY PARTICLES")
         case .none:

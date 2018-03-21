@@ -35,5 +35,11 @@ public struct AppColor {
         public static let red = UIColor(red: 222.0/255.0, green: 60.0/255.0, blue: 67.0/255.0, alpha: 1.0)
         public static let purple = UIColor(red: 149.0/255.0, green: 65.0/255.0, blue: 149.0/255.0, alpha: 1.0)
         public static let blue = UIColor(red: 25.0/255.0, green: 158.0/255.0, blue: 217.0/255.0, alpha: 1.0)
+        public static let allColors: [UIColor] = [Apple.green,
+                                                  Apple.yellow,
+                                                  Apple.orange,
+                                                  Apple.red,
+                                                  Apple.purple,
+                                                  Apple.blue]
     }
 }
