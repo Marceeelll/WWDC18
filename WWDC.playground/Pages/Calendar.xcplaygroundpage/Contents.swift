@@ -14,7 +14,7 @@ public class ParticleController {
     private var particles: [Particle] = []
     private var isParticleAnimationRunning = false
     private let simulatorScreenWidth: CGFloat = 320
-    private let simulatorScreenCenterPoint = CGPoint(x: 320.0/2.0, y: 100)
+    private let simulatorScreenCenterPoint = CGPoint(x: 320.0/2.0, y: 44)
     private let particleRect = CGRect(x: 20, y: 60, width: 280, height: 200)
     private var group = DispatchGroup()
     
@@ -24,7 +24,7 @@ public class ParticleController {
     
     func startParticleAnimation(forEventType eventType: EventType) {
         if particles.isEmpty {
-            particles = getParticles(forEventType: .important)
+            particles = getParticles(forEventType: eventType)
         }
         if !particles.isEmpty && !isParticleAnimationRunning {
             isParticleAnimationRunning = true
@@ -77,18 +77,39 @@ public class ParticleController {
         switch eventType {
         case .birthday:
             print("BIRTHDAY PARTICLES")
-            return []
+            var result: [Particle] = []
+            for _ in 0..<1 {
+                if let emitter = getEmitter(forEventType: eventType) {
+                    let delay = 0.0
+                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 5.0)
+                    result.append(particle)
+                }
+            }
+            return result
         case .christmas:
             print("CHRISTMAS PARTICLES")
-            return []
+            var result: [Particle] = []
+            for _ in 0..<1 {
+                if let emitter = getEmitter(forEventType: eventType) {
+                    let delay = 0.0
+                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 4.0)
+                    result.append(particle)
+                }
+            }
+            return result
         case .wwdc:
             print("WWDC PARTICLES")
-            return []
+            var result: [Particle] = []
+            for _ in 0..<1 {
+                if let emitter = getEmitter(forEventType: eventType) {
+                    let delay = 0.0
+                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 1.3)
+                    result.append(particle)
+                }
+            }
+            return result
         case .newYear:
             print("NEW YEAR PARTICLES")
-            return []
-        case .important:
-            print("IMPORTANT PARTICLES")
             var result: [Particle] = []
             for index in 0..<5 {
                 if let emitter = getEmitter(forEventType: eventType) {
@@ -98,6 +119,9 @@ public class ParticleController {
                 }
             }
             return result
+        case .important:
+            print("IMPORTANT PARTICLES")
+            return []
         case .holiday:
             print("HOLIDAY PARTICLES")
             return []
@@ -117,28 +141,21 @@ public class ParticleController {
             
             var cells: [CAEmitterCell] = []
             
-            for index in 0..<3 {
+            for index in 0..<9 {
                 let cell = CAEmitterCell()
                 
-                let intensity = Float(0.3)
-                
-                //            cell.birthRate = 1.5
-                cell.birthRate = 5
-                cell.lifetime = 10
+                cell.birthRate = 6.0
+                cell.lifetime = 5.0
                 cell.lifetimeRange = 0
-                cell.velocity = CGFloat(350.0 * intensity)
-                cell.velocityRange = CGFloat(80.0 * intensity)
-                cell.emissionLongitude = CGFloat.pi
-                cell.emissionRange = CGFloat.pi/4
-                cell.spin = CGFloat(3.5 * intensity)
-                cell.spinRange = CGFloat(4.0 * intensity)
-                cell.scaleRange = CGFloat(intensity)
-                cell.scaleSpeed = CGFloat(-0.1 * intensity)
-                
-                cell.redRange = 200
-                cell.greenRange = 200
-                cell.alphaRange = 1
-                cell.alphaSpeed = 1
+                cell.velocity = 140.0
+                cell.velocityRange = 20.0
+                cell.emissionLongitude = CGFloat(Double.pi)
+                cell.emissionRange = 0.5
+                cell.spin = 3.5
+                cell.spinRange = 0
+                cell.color = getRandomColor().cgColor
+                cell.scaleRange = 0.25
+                cell.scale = 0.3
                 
                 switch index%3 {
                 case 0: cell.contents = UIImage(named: "confetti_1.png")!.cgImage
@@ -155,35 +172,66 @@ public class ParticleController {
             
             return emitter
         case .christmas:
-            return nil
-        case .wwdc:
-            return nil
-        case .newYear:
             let emitter = CAEmitterLayer()
             emitter.emitterPosition = simulatorScreenCenterPoint
             emitter.emitterShape = kCAEmitterLayerLine
-            emitter.emitterSize = CGSize(width: simulatorScreenWidth, height: 1)
+            emitter.emitterSize = CGSize(width: 300, height: 30)
+            
             var cells: [CAEmitterCell] = []
-            for _ in 0..<16 {
+            
+            for _ in 0..<1 {
                 let cell = CAEmitterCell()
-                cell.birthRate = 4
-                cell.lifetime = 10.0
-                cell.lifetimeRange = 0
-                cell.velocity = 80
-                cell.velocityRange = 120
-                cell.emissionLongitude = CGFloat.pi
-                cell.emissionRange = 0.5
-                cell.spin = 3.0
-                cell.color = UIColor.red.cgColor
-                cell.contents = UIImage(named: "confetti_1.png")!.cgImage
-                cell.scale = 1.0
+                
+                cell.birthRate = 6.0
+                cell.lifetime = 3.5
+                cell.velocity = 80.0
+                
+                cell.emissionLongitude = (180.0*(CGFloat.pi/180.0))
+                cell.emissionRange = 0.3
+                cell.spin = 0.0
+                cell.spinRange = 3.0
+                cell.scale = 0.4
+                cell.scaleRange = 0.15
+                cell.color = AppColor.Particle.coldBlue.cgColor
+                cell.alphaSpeed = -0.3
+                cell.contents = UIImage(named: "snow.png")!.cgImage
+                
                 cells.append(cell)
             }
             
             emitter.emitterCells = cells
             
             return emitter
-        case .important:
+        case .wwdc:
+            let emitter = CAEmitterLayer()
+            emitter.emitterPosition = simulatorScreenCenterPoint
+            emitter.emitterShape = kCAEmitterLayerPoint
+            emitter.emitterSize = CGSize(width: 300, height: 30)
+            
+            var cells: [CAEmitterCell] = []
+            
+            for _ in 0..<1 {
+                let cell = CAEmitterCell()
+                
+                cell.birthRate = 1.0
+                cell.lifetime = 6.0
+                cell.lifetimeRange = 0
+                cell.velocity = 120.0
+                cell.emissionLongitude = 1.58
+                cell.emissionLatitude = 0.0
+                cell.emissionRange = 0.3
+                cell.spin = 0.0
+                cell.spinRange = 3.0
+                cell.scale = 0.4
+                cell.contents = UIImage(named: "wwdc18ticket.png")!.cgImage
+                
+                cells.append(cell)
+            }
+            
+            emitter.emitterCells = cells
+            
+            return emitter
+        case .newYear:
             let emitter = CAEmitterLayer()
             emitter.emitterPosition = calculateRandomPoint(inRect: particleRect)
             if !particles.isEmpty {
@@ -215,6 +263,8 @@ public class ParticleController {
             emitter.emitterCells = cells
             
             return emitter
+        case .important:
+            return nil
         case .holiday:
             print("HOLIDAY PARTICLES")
             return nil

@@ -42,4 +42,8 @@ public struct AppColor {
                                                   Apple.purple,
                                                   Apple.blue]
     }
+    
+    public struct Particle {
+        public static let coldBlue = UIColor(red: 146.0/255.0, green: 194.0/255.0, blue: 250.0/255.0, alpha: 1.0)
+    }
 }

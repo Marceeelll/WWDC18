@@ -9,7 +9,14 @@ public class EventController {
     
     public func createDemonstrationEvents() {
         
-        events = [Event(title: "Denise Hagmann's Birthday (Sister)",
+        events = [Event(title: "BIRTHDAY", startDate: Date(), endDate: Date(), type: .birthday, isFullTime: false),
+            Event(title: "CHRISTMAS", startDate: Date(), endDate: Date(), type: .christmas, isFullTime: false),
+            Event(title: "HOLIDAY", startDate: Date(), endDate: Date(), type: .holiday, isFullTime: false),
+            Event(title: "IMPORTANT", startDate: Date(), endDate: Date(), type: .important, isFullTime: false),
+            Event(title: "NEW YEAR", startDate: Date(), endDate: Date(), type: .newYear, isFullTime: false),
+            Event(title: "NONE", startDate: Date(), endDate: Date(), type: .none, isFullTime: false),
+            Event(title: "WWDC", startDate: Date(), endDate: Date(), type: .wwdc, isFullTime: false),
+            Event(title: "Denise Hagmann's Birthday (Sister)",
                         startDate: Date(timeIntervalSince1970: 1523523600),
                         endDate: Date(timeIntervalSince1970: 1523527200),
                         type: .birthday, isFullTime: true),
