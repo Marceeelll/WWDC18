@@ -46,7 +46,6 @@ public class UIEmitterAttributeTableViewCell: UITableViewCell {
     }
     
     func setup() {
-        attributeTitleLabel.backgroundColor = UIColor.lightGray
         self.addSubview(attributeTitleLabel)
     }
     
@@ -85,7 +84,6 @@ public class UIEmitterAttributeTableViewBasicCell: UIEmitterAttributeTableViewCe
     }
     
     public override func setup() {
-        backgroundColor = UIColor.blue
         super.setup()
         self.addSubview(descriptionLabel)
     }
@@ -127,7 +125,6 @@ public class UIEmitterAttributeTableViewSliderCell: UIEmitterAttributeTableViewC
     }
     
     override func setup() {
-        backgroundColor = UIColor.orange
         super.setup()
         self.addSubview(attribetuSlider)
         attribetuSlider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
@@ -193,7 +190,6 @@ public class UIEmitterAttributeTableViewTwofoldValueCell: UIEmitterAttributeTabl
     }
     
     public override func setup() {
-        backgroundColor = UIColor.green
         super.setup()
         
         inputSlider1.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
@@ -1107,8 +1103,6 @@ public class UIEmitterCellAttributesFoldableTableView: UIFoldableTableView<Attri
 extension UIEmitterCellAttributesFoldableTableView: UIEmitterAttributeTableViewCellDelegate {
     public func valueChanged(newValue: Float, onAttribute attribute: Attribute) {
         
-        print("Value Changed - newValue: \(newValue) - attribute: \(attribute)")
-        
         switch attribute.type {
         case EmitterCellVisualAttribute.redRange: emitterCell?.redRange = newValue
         case EmitterCellVisualAttribute.greenRange: emitterCell?.greenRange = newValue
@@ -1145,8 +1139,6 @@ extension UIEmitterCellAttributesFoldableTableView: UIEmitterAttributeTableViewC
     }
     
     public func twoFoldedValueChanged(newValue1: Float, newValue2: Float, onAttribute attribute: Attribute) {
-        
-        print("Value Changed - newValue1: \(newValue1) - \(newValue2) - attribute: \(attribute)")
         
         switch attribute.type {
         case EmitterCellContentAttribute.contentsRect:
@@ -1519,8 +1511,6 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
 extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellDelegate {
     func valueChanged(newValue: Float, onAttribute attribute: Attribute) {
         
-        print("--- value changed (emitterAttribute) - \(newValue) - \(attribute)")
-        
         switch attribute.type {
         case EmitterLayerCellAttribute.scale:
             emitter.scale = newValue
@@ -1539,9 +1529,7 @@ extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellD
     }
     
     func twoFoldedValueChanged(newValue1: Float, newValue2: Float, onAttribute attribute: Attribute) {
-        
-        print("--- two value changed (emitterAttribute) - \(newValue1) - \(newValue2) - \(attribute)")
-        
+
         switch attribute.type {
         case EmitterLayerGeometryAttribute.emitterPosition:
             emitter.emitterPosition = CGPoint(x: CGFloat(newValue1),
@@ -1670,7 +1658,7 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
     var expandingMenuButton2 = UIButton()
     var expandingMenuButton3 = UIButton()
     
-    var viewMode = ViewMode.emitterCellOverview
+    var viewMode = ViewMode.emitterAttributeEditor
     
     enum ViewMode {
         case emitterAttributeEditor
@@ -1726,16 +1714,15 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
     
     func setup() {
         view.backgroundColor = UIColor.white
-        
         emitterPreview.backgroundColor = UIColor.lightGray
+        
         view.addSubview(emitterPreview)
-        
         view.addSubview(emitterTableView)
-        emitterTableView.isHidden = true // ⚠️
-        //        emitterCellTableView.isHidden = true // ⚠️
         view.addSubview(emitterCellTableView)
-        
         view.addSubview(emitterCellOverview)
+        
+        emitterCellTableView.isHidden = true
+        emitterCellOverview.isHidden = true
         
         // Expandable Menu
         expandingMenuButton1.setImage(UIImage(named: "icon_edit_white.png"), for: .normal)
@@ -1756,14 +1743,11 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
         menuButton.center = CGPoint(x: self.view.frame.width/2/2,
                                     y: 630)
         menuButton.addTarget(self, action: #selector(toggleButtonMenu(_:)), for: .touchUpInside)
-        //        menuButton.startFromPoint = CGPoint(x: menuButton.center.x,
-        //                                            y: menuButton.center.y - 200)
         menuButton.titleLabel?.adjustsFontSizeToFitWidth = true
         menuButton.titleLabel?.font = UIFont(name: "Helvetica", size: 31.0)
         menuButton.setTitle("+", for: .normal)
         menuButton.backgroundColor = UIColor.black
         menuButton.layer.cornerRadius = menuButton.frame.width/2
-        //        menuButton.endAtPoint = menuButton.center
         self.view.addSubview(menuButton)
     }
     
@@ -1900,6 +1884,9 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
         print("Show Developer Mode")
         if !menuButton.isRunningAnimation {
             toggleButtonMenu()
+            let devOverview = EmitterDeveloperCodeViewController()
+            devOverview.emitter = self.emitterPreview.emitter
+            navigationController?.pushViewController(devOverview, animated: true)
         }
     }
     
@@ -2019,6 +2006,33 @@ extension ViewController: UIEmitterCellsOverviewDelegate {
         emitterCellTableView.indexPathToEdit = indexPath
         flip()
     }
+}
+
+class EmitterDeveloperCodeViewController: UIViewController {
+    var emitter: CAEmitterLayer!
+    var codeTextView = UITextView()
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        self.view.backgroundColor = UIColor.white
+        self.view.addSubview(codeTextView)
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(shareCode))
+        
+        let code = emitter.developerDescription()
+        codeTextView.text = code
+        
+        ConstraintAssistant.addConstraints(on: codeTextView, andMatchTheSameSizeAsView: self.view)
+    }
+    
+    @objc func shareCode() {
+        let code = emitter.developerDescription()
+        let shareActivity = UIActivityViewController(activityItems: [code], applicationActivities: nil)
+        present(shareActivity, animated: true)
+    }
+    
+    
 }
 
 

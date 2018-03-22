@@ -1,25 +1,25 @@
-import Foundation
+import UIKit
 
-protocol CustomDeveloperStringConvertible {
+public protocol CustomDeveloperStringConvertible {
     func developerDescription(varName: String) -> String
 }
 
 extension CustomDeveloperStringConvertible {
-    func line(forVariableName varName: String, attribute: String, value: String) -> String {
+    public func line(forVariableName varName: String, attribute: String, value: String) -> String {
         return "\(varName).\(attribute) = \(value)\n"
     }
     
-    func line(forVariableName varName: String, attribute: String, value: CustomDeveloperStringConvertible) -> String {
+    public func line(forVariableName varName: String, attribute: String, value: CustomDeveloperStringConvertible) -> String {
         return "\(varName).\(attribute) = \(value.developerDescription(varName: ""))\n"
     }
     
-    func line(comment: String) -> String {
+    public func line(comment: String) -> String {
         return "\n// \(comment)\n"
     }
 }
 
 extension CAEmitterCell: CustomDeveloperStringConvertible {
-    func developerDescription(varName: String) -> String {
+    public func developerDescription(varName: String) -> String {
         var result = "let \(varName) = CAEmitterCell()\n"
         
         result += line(comment: "Providing Emitter Cell Content")
@@ -72,7 +72,7 @@ extension CAEmitterCell: CustomDeveloperStringConvertible {
         return result
     }
     
-    func developerMagnificationFilterDescription() -> String {
+    public func developerMagnificationFilterDescription() -> String {
         switch self.magnificationFilter {
         case kCAFilterLinear: return "kCAFilterLinear"
         case kCAFilterNearest: return "kCAFilterNearest"
@@ -83,7 +83,7 @@ extension CAEmitterCell: CustomDeveloperStringConvertible {
 }
 
 extension CAEmitterLayer: CustomDeveloperStringConvertible {
-    func developerDescription(varName: String = "emitter") -> String {
+    public func developerDescription(varName: String = "emitter") -> String {
         var result = "let \(varName) = CAEmitterLayer()\n"
         
         result += line(comment: "Emitter Geometry")
@@ -126,7 +126,7 @@ extension CAEmitterLayer: CustomDeveloperStringConvertible {
         return result
     }
     
-    func developerRenderModeDescription() -> String {
+    public func developerRenderModeDescription() -> String {
         print(self.renderMode)
         switch self.renderMode {
         case kCAEmitterLayerPoints: return "kCAEmitterLayerPoints"
@@ -138,7 +138,7 @@ extension CAEmitterLayer: CustomDeveloperStringConvertible {
         }
     }
     
-    func developerEmitterShapeDescription() -> String {
+    public func developerEmitterShapeDescription() -> String {
         switch self.emitterShape {
         case kCAEmitterLayerPoint: return "kCAEmitterLayerPoint"
         case kCAEmitterLayerPoint: return "kCAEmitterLayerPoint"
@@ -153,19 +153,19 @@ extension CAEmitterLayer: CustomDeveloperStringConvertible {
 }
 
 extension CGPoint: CustomDeveloperStringConvertible {
-    func developerDescription(varName: String = "") -> String {
+    public func developerDescription(varName: String = "") -> String {
         return "CGPoint(x: \(self.x), y: \(self.y))"
     }
 }
 
 extension CGSize: CustomDeveloperStringConvertible {
-    func developerDescription(varName: String) -> String {
+    public func developerDescription(varName: String) -> String {
         return "CGSize(width: \(self.width), height: \(self.height)"
     }
 }
 
 extension CGRect: CustomDeveloperStringConvertible {
-    func developerDescription(varName: String) -> String {
+    public func developerDescription(varName: String) -> String {
         return "CGRect(x: \(self.minX), y: \(self.minY), width: \(self.width), height: \(self.height))"
     }
 }

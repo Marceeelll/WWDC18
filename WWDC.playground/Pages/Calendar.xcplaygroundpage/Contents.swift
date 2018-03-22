@@ -3,7 +3,6 @@
 import UIKit
 import PlaygroundSupport
 import AVFoundation
-import SpriteKit
 
 struct Particle {
     var emitter: CAEmitterLayer
