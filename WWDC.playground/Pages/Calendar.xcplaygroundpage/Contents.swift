@@ -117,7 +117,7 @@ public class ParticleController {
                 if let emitter = getEmitter(forEventType: eventType) {
                     let delay = 0.0
                     let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 5.0,
-                                            soundName: "splash", soundType: "wav", loopSound: true)
+                                            soundName: "sound_birthday", soundType: "m4a", loopSound: false)
                     result.append(particle)
                 }
             }
@@ -150,7 +150,8 @@ public class ParticleController {
             for index in 0..<5 {
                 if let emitter = getEmitter(forEventType: eventType) {
                     let delay = Double(index)
-                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 0.2)
+                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 0.5,
+                                            soundName: "sound_rocket", soundType: "m4a", loopSound: false)
                     result.append(particle)
                 }
             }
