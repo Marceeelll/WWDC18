@@ -51,20 +51,12 @@ public class UIEmitterAttributeTableViewCell: UITableViewCell {
     
     func setupConstraints() {
         // Attribute Title Label Constraints
-        attributeTitleLabel.translatesAutoresizingMaskIntoConstraints = false
-        let atLeft = NSLayoutConstraint(item: attributeTitleLabel,
-                                        attribute: .left, relatedBy: .equal,
-                                        toItem: self, attribute: .left,
-                                        multiplier: 1.0, constant: borderSpace)
-        let atTop = NSLayoutConstraint(item: attributeTitleLabel,
-                                       attribute: .top, relatedBy: .equal,
-                                       toItem: self, attribute: .top,
-                                       multiplier: 1.0, constant: borderSpace)
-        let atRight = NSLayoutConstraint(item: attributeTitleLabel,
-                                         attribute: .right, relatedBy: .equal,
-                                         toItem: self, attribute: .right,
-                                         multiplier: 1.0, constant: -borderSpace)
-        self.addConstraints([atLeft, atTop, atRight])
+        let constraintBuilder = ConstraintBuilder(subview: attributeTitleLabel, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .top, superviewAttribute: .top, constant: borderSpace)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
+            .buildAndApplyConstrains()
     }
     
     func displayAttribute() {
@@ -91,24 +83,12 @@ public class UIEmitterAttributeTableViewBasicCell: UIEmitterAttributeTableViewCe
     override func setupConstraints() {
         super.setupConstraints()
         // Selected Attribute Label Constraints
-        descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
-        let dlLeft = NSLayoutConstraint(item: descriptionLabel,
-                                        attribute: .left, relatedBy: .equal,
-                                        toItem: self, attribute: .left,
-                                        multiplier: 1.0, constant: borderSpace)
-        let dlTop = NSLayoutConstraint(item: descriptionLabel,
-                                       attribute: .top, relatedBy: .equal,
-                                       toItem: attributeTitleLabel, attribute: .bottom,
-                                       multiplier: 1.0, constant: borderSpace)
-        let dlRight = NSLayoutConstraint(item: descriptionLabel,
-                                         attribute: .right, relatedBy: .equal,
-                                         toItem: self, attribute: .right,
-                                         multiplier: 1.0, constant: -borderSpace)
-        let dlBottom = NSLayoutConstraint(item: descriptionLabel,
-                                          attribute: .bottom, relatedBy: .equal,
-                                          toItem: self, attribute: .bottom,
-                                          multiplier: 1.0, constant: -borderSpace)
-        self.addConstraints([dlLeft, dlTop, dlRight, dlBottom])
+        let constraintBuilder = ConstraintBuilder(subview: descriptionLabel, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .top, anotherView: attributeTitleLabel, anotherAttribute: .bottom, constant: borderSpace)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
+            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
+            .buildAndApplyConstrains()
     }
 }
 
@@ -134,23 +114,12 @@ public class UIEmitterAttributeTableViewSliderCell: UIEmitterAttributeTableViewC
         super.setupConstraints()
         // Attribute Slider Constraints
         attribetuSlider.translatesAutoresizingMaskIntoConstraints = false
-        let asLeft = NSLayoutConstraint(item: attribetuSlider,
-                                        attribute: .left, relatedBy: .equal,
-                                        toItem: self, attribute: .left,
-                                        multiplier: 1.0, constant: borderSpace)
-        let asTop = NSLayoutConstraint(item: attribetuSlider,
-                                       attribute: .top, relatedBy: .equal,
-                                       toItem: attributeTitleLabel, attribute: .bottom,
-                                       multiplier: 1.0, constant: borderSpace)
-        let asRight = NSLayoutConstraint(item: attribetuSlider,
-                                         attribute: .right, relatedBy: .equal,
-                                         toItem: self, attribute: .right,
-                                         multiplier: 1.0, constant: -borderSpace)
-        let asBottom = NSLayoutConstraint(item: attribetuSlider,
-                                          attribute: .bottom, relatedBy: .equal,
-                                          toItem: self, attribute: .bottom,
-                                          multiplier: 1.0, constant: -borderSpace)
-        self.addConstraints([asLeft, asTop, asRight, asBottom])
+        let constraintBuilder = ConstraintBuilder(subview: attribetuSlider, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .top, anotherView: attributeTitleLabel, anotherAttribute: .bottom, constant: borderSpace)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
+            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
+            .buildAndApplyConstrains()
     }
     
     @objc func sliderValueChanged(_ sender: UISlider) {
@@ -224,24 +193,12 @@ public class UIEmitterAttributeTableViewTwofoldValueCell: UIEmitterAttributeTabl
     override func setupConstraints() {
         super.setupConstraints()
         // Attribute Slider Constraints
-        containerStackView.translatesAutoresizingMaskIntoConstraints = false
-        let containerLeft = NSLayoutConstraint(item: containerStackView,
-                                               attribute: .left, relatedBy: .equal,
-                                               toItem: self, attribute: .left,
-                                               multiplier: 1.0, constant: borderSpace)
-        let containerTop = NSLayoutConstraint(item: containerStackView,
-                                              attribute: .top, relatedBy: .equal,
-                                              toItem: attributeTitleLabel, attribute: .bottom,
-                                              multiplier: 1.0, constant: borderSpace)
-        let containerRight = NSLayoutConstraint(item: containerStackView,
-                                                attribute: .right, relatedBy: .equal,
-                                                toItem: self, attribute: .right,
-                                                multiplier: 1.0, constant: -borderSpace)
-        let containerBottom = NSLayoutConstraint(item: containerStackView,
-                                                 attribute: .bottom, relatedBy: .equal,
-                                                 toItem: self, attribute: .bottom,
-                                                 multiplier: 1.0, constant: -borderSpace)
-        self.addConstraints([containerLeft, containerTop, containerRight, containerBottom])
+        let constraintBuilder = ConstraintBuilder(subview: containerStackView, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .top, anotherView: attributeTitleLabel, anotherAttribute: .bottom, constant: borderSpace)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
+            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
+            .buildAndApplyConstrains()
     }
     
     @objc func sliderValueChanged(_ sender: UISlider) {
@@ -371,7 +328,7 @@ public protocol Expandable: class {
     var endAtPoint: CGPoint? { get set }
 }
 
-// jump
+
 public extension Expandable where Self: UIView {
     public func toggle(onView view: UIView) {
         if !isRunningAnimation {
@@ -410,7 +367,6 @@ public extension Expandable where Self: UIView {
                 self.setNeedsDisplay()
             }) { (finished) in
                 if finished {
-                    print("Finished")
                     self.expandButtons(onView: view)
                 }
             }
@@ -805,7 +761,7 @@ func createEmitterLayerCellAttributes() -> [Attribute] {
         case .scale:
             attribute = AttributeValueRange(title: "Scale", type: attributeType, min: 0.0, max: 10.0)
         case .seed:
-            attribute = AttributeValueRange(title: "Seed", type: attributeType, min: -100.0, max: 100.0)
+            attribute = AttributeValueRange(title: "Seed", type: attributeType, min: 0, max: 100.0)
         case .spin:
             attribute = AttributeValueRange(title: "Spin", type: attributeType, min: -100.0, max: 100.0)
         case .velocity:
@@ -1009,7 +965,6 @@ public class UIEmitterCellAttributesFoldableTableView: UIFoldableTableView<Attri
             cell.initializeCell(withAttribute: attributeValueRange)
             
             var sliderValue: Float = 0.0
-            
             if let emitterCell = emitterCell {
                 switch attribute.type {
                 case EmitterCellVisualAttribute.redRange: sliderValue = emitterCell.redRange
@@ -1443,6 +1398,9 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
             var sliderValue: Float = 0.0
             
             switch attribute.type {
+            case EmitterLayerGeometryAttribute.emitterZPosition: sliderValue = Float(emitter.zPosition)
+            case EmitterLayerGeometryAttribute.emitterDepth: sliderValue = Float(emitter.emitterDepth)
+            case EmitterLayerCellAttribute.scale: sliderValue = emitter.scale
             case EmitterLayerCellAttribute.seed: sliderValue = Float(emitter.seed)
             case EmitterLayerCellAttribute.spin: sliderValue = emitter.spin
             case EmitterLayerCellAttribute.velocity: sliderValue = emitter.velocity
@@ -1512,10 +1470,15 @@ extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellD
     func valueChanged(newValue: Float, onAttribute attribute: Attribute) {
         
         switch attribute.type {
+        case EmitterLayerGeometryAttribute.emitterZPosition:
+            emitter.zPosition = CGFloat(newValue)
+        case EmitterLayerGeometryAttribute.emitterDepth:
+            emitter.emitterDepth = CGFloat(newValue)
         case EmitterLayerCellAttribute.scale:
             emitter.scale = newValue
         case EmitterLayerCellAttribute.seed:
-            emitter.seed = UInt32(newValue)
+            let intSeed = newValue > 0 ? Int(newValue) : 0
+            emitter.seed = UInt32(intSeed)
         case EmitterLayerCellAttribute.spin:
             emitter.spin = newValue
         case EmitterLayerCellAttribute.velocity:
@@ -1581,7 +1544,7 @@ class UIEmitterCellsOverviewTableView: UITableView, UITableViewDataSource, UITab
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "#####", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "basic_apple_cell", for: indexPath)
         
         cell.textLabel?.text = "Emitter Cell Nr. \(indexPath.row+1)"
         
@@ -1692,7 +1655,7 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
                                       forCellReuseIdentifier: "basic_cell")
         
         emitterCellOverview.register(UITableViewCell.self,
-                                     forCellReuseIdentifier: "#####")
+                                     forCellReuseIdentifier: "basic_apple_cell")
         
         emitterTableView.emitter = emitterPreview.emitter
         emitterTableView.foldableDelegate = self
@@ -1754,25 +1717,13 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
     func setupConstraints() {
         // Preview View Constraints
         let navigationBarHeight: CGFloat = 44.0
-        emitterPreview.translatesAutoresizingMaskIntoConstraints = false
-        let epLeft = NSLayoutConstraint(item: emitterPreview,
-                                        attribute: .left, relatedBy: .equal,
-                                        toItem: view, attribute: .left,
-                                        multiplier: 1.0, constant: 0.0)
-        let epTop = NSLayoutConstraint(item: emitterPreview,
-                                       attribute: .top, relatedBy: .equal,
-                                       toItem: view, attribute: .top,
-                                       multiplier: 1.0, constant: navigationBarHeight)
-        let epRight = NSLayoutConstraint(item: emitterPreview,
-                                         attribute: .right, relatedBy: .equal,
-                                         toItem: view, attribute: .right,
-                                         multiplier: 1.0, constant: 0.0)
-        let epHeight = NSLayoutConstraint(item: emitterPreview,
-                                          attribute: .height, relatedBy: .equal,
-                                          toItem: view, attribute: .height,
-                                          multiplier: 1.0/3.0, constant: 0)
-        view.addConstraints([epLeft, epTop, epRight, epHeight])
-        
+        let constraintBuilder = ConstraintBuilder(subview: emitterPreview, superview: self.view)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left)
+            .constraint(subviewAttribute: .top, superviewAttribute: .top, constant: navigationBarHeight)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right)
+            .constraint(subviewAttribute: .left, superviewAttribute: .left)
+            .constraint(subviewAttribute: .height, superviewAttribute: .height, multiplier: 1.0/3.0)
+            .buildAndApplyConstrains()
         
         setConstraints(forTableView: emitterTableView)
         setConstraints(forTableView: emitterCellTableView)
@@ -1781,24 +1732,12 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
     }
     
     private func setConstraints(forTableView tableView: UITableView) {
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        let left = NSLayoutConstraint(item: tableView,
-                                      attribute: .left, relatedBy: .equal,
-                                      toItem: view, attribute: .left,
-                                      multiplier: 1.0, constant: 0.0)
-        let top = NSLayoutConstraint(item: tableView,
-                                     attribute: .top, relatedBy: .equal,
-                                     toItem: emitterPreview, attribute: .bottom,
-                                     multiplier: 1.0, constant: 0.0)
-        let right = NSLayoutConstraint(item: tableView,
-                                       attribute: .right, relatedBy: .equal,
-                                       toItem: view, attribute: .right,
-                                       multiplier: 1.0, constant: 0.0)
-        let bottom = NSLayoutConstraint(item: tableView,
-                                        attribute: .bottom, relatedBy: .equal,
-                                        toItem: view, attribute: .bottom,
-                                        multiplier: 1.0, constant: 0.0)
-        view.addConstraints([left, top, right, bottom])
+        let constraintBuilder = ConstraintBuilder(subview: tableView, superview: self.view)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left)
+            .constraint(subviewAttribute: .top, anotherView: emitterPreview, anotherAttribute: .bottom)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right)
+            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom)
+            .buildAndApplyConstrains()
     }
     
     
