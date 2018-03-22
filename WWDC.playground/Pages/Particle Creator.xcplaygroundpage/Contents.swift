@@ -356,7 +356,7 @@ public class UIEmitterPreviewView: UIView {
         
         emitter.emitterCells = cells
         
-        self.layer.addSublayer(emitter)
+//        self.layer.addSublayer(emitter)
     }
 }
 
@@ -367,16 +367,19 @@ public protocol Expandable: class {
     var expandingViewsMenu: [UIView] { get set }
     var expandingViewsSpaceInDegree: CGFloat { get set }
     
-    var backgroundView: UIView! { get set }
+    var backgroundView: UIView { get set }
+    var backgroundViewColor: UIColor { get }
     var isRunningAnimation: Bool { get set }
+    var isMenuExpanded: Bool { get set }
     var startFromPoint: CGPoint? { get set }
     var endAtPoint: CGPoint? { get set }
 }
 
+// jump
 public extension Expandable where Self: UIView {
     public func toggle(onView view: UIView) {
         if !isRunningAnimation {
-            if backgroundView == nil {
+            if !isMenuExpanded {
                 expandMenu(onView: view)
             } else {
                 closeMenu(onView: view)
@@ -394,13 +397,15 @@ public extension Expandable where Self: UIView {
     
     private func expandMenu(onView view: UIView) {
         isRunningAnimation = true
+        isMenuExpanded = true
         
-        backgroundView = UIView(frame: view.frame)
-        backgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.0)
+        backgroundView.backgroundColor = UIColor.clear
+        backgroundView.frame = view.frame
+        
         view.insertSubview(backgroundView, belowSubview: self)
         
         UIView.animate(withDuration: 0.4) {
-            self.backgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+            self.backgroundView.backgroundColor = self.backgroundViewColor
         }
         
         if let startFromPoint = startFromPoint {
@@ -444,11 +449,6 @@ public extension Expandable where Self: UIView {
     private func position(forButtonIndex index: Int, forDegree degree: CGFloat) -> CGPoint {
         var adjustedDegree = degree
         if expandingViewsMenu.count%2 == 0 {
-            //            if index%2 == 0 {
-            //                adjustedDegree -= expandingViewsSpaceInDegree * CGFloat(index/2) + expandingViewsSpaceInDegree/2
-            //            } else {
-            //                adjustedDegree += expandingViewsSpaceInDegree * CGFloat(index/2) + expandingViewsSpaceInDegree/2
-            //            }
             let middleElement = expandingViewsMenu.count/2
             if index < middleElement {
                 adjustedDegree -= expandingViewsSpaceInDegree * CGFloat(expandingViewsMenu.count/2 - index) - expandingViewsSpaceInDegree/2
@@ -482,11 +482,11 @@ public extension Expandable where Self: UIView {
         self.isRunningAnimation = true
         
         UIView.animate(withDuration: 0.4, animations: {
-            self.backgroundView.backgroundColor = UIColor.black.withAlphaComponent(0.0)
+            self.backgroundView.backgroundColor = UIColor.clear
         }) { (finished) in
             if finished {
                 self.backgroundView.removeFromSuperview()
-                self.backgroundView = nil
+                self.isMenuExpanded = false
             }
         }
         
@@ -555,12 +555,13 @@ public enum Direction {
 
 
 
-
 public class MenuButton: UIButton, Expandable {
     public var expandingViewsMenu: [UIView] = []
     public var expandingViewsSpaceInDegree: CGFloat = 40.0
-    public var backgroundView: UIView!
+    public var backgroundView: UIView = UIView()
+    public var backgroundViewColor: UIColor = UIColor.black.withAlphaComponent(0.3)
     public var isRunningAnimation: Bool = false
+    public var isMenuExpanded: Bool = false
     public var startFromPoint: CGPoint?
     public var endAtPoint: CGPoint?
 }
@@ -569,7 +570,7 @@ public class MenuButton: UIButton, Expandable {
 
 
 
-// jump Anfang
+
 
 public protocol AttributeType {
 }
@@ -1140,8 +1141,6 @@ extension UIEmitterCellAttributesFoldableTableView: UIEmitterAttributeTableViewC
         default: break
         }
         
-        // jump
-        
         updateEmitter()
     }
     
@@ -1537,8 +1536,6 @@ extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellD
             emitter.lifetime = newValue
         default: break
         }
-        
-         // jump
     }
     
     func twoFoldedValueChanged(newValue1: Float, newValue2: Float, onAttribute attribute: Attribute) {
@@ -1762,7 +1759,7 @@ class ViewController: UIViewController, UIFoldableTableViewDelegate {
         //        menuButton.startFromPoint = CGPoint(x: menuButton.center.x,
         //                                            y: menuButton.center.y - 200)
         menuButton.titleLabel?.adjustsFontSizeToFitWidth = true
-        menuButton.titleLabel?.font = UIFont(name: "Helvetica", size: 38.0)
+        menuButton.titleLabel?.font = UIFont(name: "Helvetica", size: 31.0)
         menuButton.setTitle("+", for: .normal)
         menuButton.backgroundColor = UIColor.black
         menuButton.layer.cornerRadius = menuButton.frame.width/2
