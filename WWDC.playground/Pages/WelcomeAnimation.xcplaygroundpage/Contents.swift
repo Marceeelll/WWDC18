@@ -2,6 +2,7 @@
 
 import UIKit
 import PlaygroundSupport
+import AVFoundation
 
 
 class ViewController: UIViewController {
@@ -53,9 +54,29 @@ class ViewController: UIViewController {
         startAnimatingStartLabel(withDelay: startAnimatingLabelDelay)
     }
     
+    var player: AVAudioPlayer?
+    
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if canContinueToNextScreen {
             canContinueToNextScreen = false
+        }
+        
+        do {
+            let urlString = Bundle.main.path(forResource: "splash", ofType: "wav")!
+            let url = URL(fileURLWithPath: urlString)
+            print("URL: \(url)")
+            player = try AVAudioPlayer(contentsOf: url)
+        } catch {
+            print("Coudn't play sound.")
+        }
+        
+        if player != nil {
+            print("1111")
+            player?.prepareToPlay()
+            player?.setVolume(0.2, fadeDuration: 0)
+            player?.play()
+        } else {
+            print("2222")
         }
     }
     

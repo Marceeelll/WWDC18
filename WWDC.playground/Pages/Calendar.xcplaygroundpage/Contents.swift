@@ -2,19 +2,36 @@
 
 import UIKit
 import PlaygroundSupport
+import AVFoundation
+import SpriteKit
 
 struct Particle {
     var emitter: CAEmitterLayer
     var startDelay: Double
     var stopDelay: Double
+    var soundName: String? = nil
+    var soundType: String? = nil
+    var loopSound: Bool = false
+    
+    init(emitter: CAEmitterLayer, startDelay: Double, stopDelay: Double,
+         soundName: String? = nil, soundType: String? = nil, loopSound: Bool = false) {
+        self.emitter = emitter
+        self.startDelay = startDelay
+        self.stopDelay = stopDelay
+        self.soundName = soundName
+        self.soundType = soundType
+        self.loopSound = loopSound
+    }
 }
 
 public class ParticleController {
     private var layer: CALayer
     private var particles: [Particle] = []
+    private var soundPlayers: [AVAudioPlayer] = []
     private var isParticleAnimationRunning = false
     private let simulatorScreenWidth: CGFloat = 320
     private let simulatorScreenCenterPoint = CGPoint(x: 320.0/2.0, y: 44)
+    private let simulatorScreenBottomCenterPoint = CGPoint(x: 320.0/2.0, y: 684)
     private let particleRect = CGRect(x: 20, y: 60, width: 280, height: 200)
     private var group = DispatchGroup()
     
@@ -33,11 +50,27 @@ public class ParticleController {
                 group.enter()
                 let particle = particles[index]
                 
+                var soundPlayer: AVAudioPlayer?
+                
+                do {
+                    if let resourceName = particle.soundName, let resourceType = particle.soundType, let urlString = Bundle.main.path(forResource: resourceName, ofType: resourceType) {
+                        let url = URL(fileURLWithPath: urlString)
+                        soundPlayer = try AVAudioPlayer(contentsOf: url)
+                        soundPlayer?.prepareToPlay()
+                        soundPlayer?.setVolume(1, fadeDuration: 0.5)
+                        soundPlayer?.numberOfLoops = particle.loopSound ? -1 : 0
+                        soundPlayers.append(soundPlayer!)
+                    }
+                } catch {
+                    print("Couldn't play sound")
+                }
+                
                 // start particle animation with delay
                 DispatchQueue.main.asyncAfter(deadline: .now() + particle.startDelay, execute: {
+                    soundPlayer?.play()
                     particle.emitter.beginTime = CACurrentMediaTime()
                     self.layer.addSublayer(particle.emitter)
-                    self.stopParticleAnimation(ofParticle: particle)
+                    self.stopParticleAnimation(ofParticle: particle, witAudioPlayer: soundPlayer)
                 })
             }
             group.notify(queue: .main, execute: {
@@ -63,12 +96,14 @@ public class ParticleController {
                 particle.emitter.removeFromSuperlayer()
             }
             self.particles = []
+            self.soundPlayers = []
         }
     }
     
-    private func stopParticleAnimation(ofParticle particle: Particle) {
+    private func stopParticleAnimation(ofParticle particle: Particle, witAudioPlayer audioPlayer: AVAudioPlayer?) {
         DispatchQueue.main.asyncAfter(deadline: .now() + particle.stopDelay) {
             particle.emitter.birthRate = 0.0
+            audioPlayer?.stop()
             self.group.leave()
         }
     }
@@ -81,7 +116,8 @@ public class ParticleController {
             for _ in 0..<1 {
                 if let emitter = getEmitter(forEventType: eventType) {
                     let delay = 0.0
-                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 5.0)
+                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 5.0,
+                                            soundName: "splash", soundType: "wav", loopSound: true)
                     result.append(particle)
                 }
             }
@@ -121,10 +157,26 @@ public class ParticleController {
             return result
         case .important:
             print("IMPORTANT PARTICLES")
-            return []
+            var result: [Particle] = []
+            for _ in 0..<1 {
+                if let emitter = getEmitter(forEventType: eventType) {
+                    let delay = 0.0
+                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 5.0)
+                    result.append(particle)
+                }
+            }
+            return result
         case .holiday:
             print("HOLIDAY PARTICLES")
-            return []
+            var result: [Particle] = []
+            for _ in 0..<1 {
+                if let emitter = getEmitter(forEventType: eventType) {
+                    let delay = 0.0
+                    let particle = Particle(emitter: emitter, startDelay: delay, stopDelay: 5.0)
+                    result.append(particle)
+                }
+            }
+            return result
         case .none:
             print("NONE PARTICLES :D")
             return []
@@ -264,10 +316,68 @@ public class ParticleController {
             
             return emitter
         case .important:
-            return nil
+            let emitter = CAEmitterLayer()
+            emitter.emitterPosition = CGPoint(x: simulatorScreenCenterPoint.x, y: 150)
+            emitter.emitterShape = kCAEmitterLayerRectangle
+            emitter.emitterSize = CGSize(width: particleRect.width, height: particleRect.height)
+            
+            var cells: [CAEmitterCell] = []
+            
+            for index in 0..<2 {
+                let cell = CAEmitterCell()
+                
+                cell.birthRate = 1.7
+                cell.lifetime = 3.5
+                cell.spin = 0.0
+                cell.spinRange = 3.0
+                cell.scale = 0.02
+                cell.scaleSpeed = 0.3
+                cell.scaleRange = 0.15
+                cell.alphaSpeed = -0.5
+
+                switch index%2 {
+                case 0: cell.contents = UIImage(named: "important1.png")!.cgImage
+                case 1: cell.contents = UIImage(named: "important2.png")!.cgImage
+                default: break
+                }
+                
+                cells.append(cell)
+            }
+            
+            emitter.emitterCells = cells
+            
+            return emitter
         case .holiday:
             print("HOLIDAY PARTICLES")
-            return nil
+            let emitter = CAEmitterLayer()
+            emitter.emitterPosition = simulatorScreenBottomCenterPoint
+            emitter.emitterShape = kCAEmitterLayerLine
+            emitter.emitterSize = CGSize(width: 300, height: 30)
+            
+            var cells: [CAEmitterCell] = []
+            
+            for index in 0..<9 {
+                let cell = CAEmitterCell()
+                
+                cell.birthRate = 2.0
+                cell.lifetime = 5.0
+                cell.lifetimeRange = 0
+                cell.emissionLongitude = CGFloat.pi
+                cell.spinRange = 0.7
+                cell.scaleRange = 0.25
+                cell.scale = 0.2
+                cell.emissionRange = 0.71
+                cell.velocityRange = 20.0
+                cell.velocity = -247.0
+                cell.yAcceleration = 109
+                cell.contents = UIImage(named: "holiday\(index+1).png")!.cgImage
+                
+                cells.append(cell)
+            }
+            
+            emitter.emitterCells = cells
+            
+            return emitter
         case .none:
             print("NONE PARTICLES :D")
             return nil
@@ -289,6 +399,26 @@ public class ParticleController {
         let numberOfColors = AppColor.Apple.allColors.count
         let randomIndex = Int(arc4random_uniform(UInt32(numberOfColors)))
         return AppColor.Apple.allColors[randomIndex]
+    }
+    
+    func image(fromText: Character) -> UIImage? {
+        let size: CGFloat = 100.0
+        let rect: CGRect = CGRect(x: 0, y: 0, width: size, height: size)
+        UIGraphicsBeginImageContext(CGSize(width: size, height: size))
+        if let currentContext = UIGraphicsGetCurrentContext() {
+            print("IN HERE")
+            let label = UILabel(frame: rect)
+            label.text = "\(fromText)"
+            label.textAlignment = .center
+            label.layer.render(in: currentContext)
+            label.backgroundColor = UIColor.orange
+            let image = UIGraphicsGetImageFromCurrentImageContext()
+            return image
+        } else {
+            print("NOOOOOT in here!!")
+        }
+        
+        return nil
     }
 }
 
@@ -364,6 +494,7 @@ class ViewController: UIViewController {
         calendarView.drawCalendar()
     }
 
+    var player: AVAudioPlayer?
 }
 
 
@@ -377,7 +508,7 @@ extension ViewController: UICalendarViewDelegateProtocol {
         calenderDayOverviewTableView.selectedDate = selectedDate
         calenderDayOverviewTableView.reloadData()
     }
-
+    
     func calenderView(_ calendarView: UICalendarView, touchedNextMonthButton: UIButton) {
     }
 
