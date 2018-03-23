@@ -4,7 +4,6 @@ import UIKit
 import PlaygroundSupport
 
 
-
 public class FoldableData<T, U> {
     public var data: T
     public var foldableItems: [U]
@@ -22,11 +21,460 @@ public class FoldableData<T, U> {
     public func numberOfFoldableElements() -> Int {
         return foldableItems.count
     }
+}
+
+
+
+public protocol UIFoldableTableViewDelegate: class {
+    func foldableTableView(didSelectUnfoldedRowAt indexPath: IndexPath)
+}
+
+open class UIFoldableTableView<T, U>: UITableView, UITableViewDataSource, UITableViewDelegate {
+    public var sections: [String] = []
+    public var elements: [[FoldableData<T, U>]] = []
+    private var selectedIndexPath: IndexPath?
+    private var unfoldedIndexPaths: [IndexPath] = []
+    
+    public var foldableDelegate: UIFoldableTableViewDelegate?
+    
+    public override init(frame: CGRect, style: UITableViewStyle) {
+        super.init(frame: frame, style: style)
+        setup()
+    }
+    
+    required public init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        setup()
+    }
+    
+    public func setup() {
+        self.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        
+        dataSource = self
+        delegate = self
+    }
+    
+    // MARK - UITableViewDelegate
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        if isUnfoldedCell(atIndexPath: indexPath) {
+            foldableDelegate?.foldableTableView(didSelectUnfoldedRowAt: indexPath)
+        } else {
+            let selectedFoldedElement = getElement(atIndexPath: indexPath)
+            if selectedFoldedElement.isFoldable() {
+                let foldBeforeUnfold = selectedIndexPath != indexPath && selectedIndexPath != nil
+                let oldSelectedIndexPath = selectedIndexPath
+                selectedIndexPath = indexPath
+                
+                if selectedFoldedElement.isUnfolded {
+                    selectedFoldedElement.isUnfolded = false
+                    fold()
+                } else {
+                    var indexPath: IndexPath = indexPath
+                    if foldBeforeUnfold {
+                        if let oldSelectedIndexPath = oldSelectedIndexPath {
+                            if oldSelectedIndexPath.section == indexPath.section && oldSelectedIndexPath.row < indexPath.row {
+                                indexPath = IndexPath(row: indexPath.row - unfoldedIndexPaths.count,
+                                                      section: oldSelectedIndexPath.section)
+                            }
+                            let oldSelectedElement = getElement(atIndexPath: oldSelectedIndexPath)
+                            oldSelectedElement.isUnfolded = false
+                            fold()
+                        }
+                    }
+                    selectedFoldedElement.isUnfolded = true
+                    unfold(atIndexPath: indexPath)
+                }
+            } else {
+                if let oldSelectedIndexPath = selectedIndexPath {
+                    let oldSelectedElement = getElement(atIndexPath: oldSelectedIndexPath)
+                    oldSelectedElement.isUnfolded = false
+                    fold()
+                }
+            }
+        }
+    }
+    
+    // MARK: - Fold
+    private func fold() {
+        let indexPathsToDelete = unfoldedIndexPaths
+        unfoldedIndexPaths = []
+        self.deleteRows(at: indexPathsToDelete, with: .right)
+        selectedIndexPath = nil
+    }
+    
+    public func fold(atIndexPath indexPath: IndexPath) {
+        let element = getElement(atIndexPath: indexPath)
+        element.isUnfolded = false
+        fold()
+    }
+    
+    
+    // MARK: - Unfold
+    private func unfold(atIndexPath indexPath: IndexPath) {
+        unfoldedIndexPaths = []
+        selectedIndexPath = indexPath
+        
+        createUnfoldIndexPaths(ofSelectedIndexPath: indexPath)
+        self.insertRows(at: unfoldedIndexPaths, with: .left)
+    }
+    
+    private func createUnfoldIndexPaths(ofSelectedIndexPath indexPath: IndexPath) {
+        let selectedElement = getElement(atIndexPath: indexPath)
+        let numberOfUnfoldingSections = selectedElement.foldableItems.count
+        if numberOfUnfoldingSections > 0 {
+            for index in 1...numberOfUnfoldingSections {
+                let unfoldingIndexPath = IndexPath(row: indexPath.row + index, section: indexPath.section)
+                unfoldedIndexPaths.append(unfoldingIndexPath)
+            }
+        }
+    }
+    
+    
+    // MARK: - Hilfsmethoden
+    public func isUnfoldedCell(atIndexPath indexPath: IndexPath) -> Bool {
+        return unfoldedIndexPaths.contains(indexPath)
+    }
+    
+    public func getUnfoldedElement(atIndexPath indexPath: IndexPath) -> U {
+        let element = getElement(atIndexPath: indexPath)
+        var adjustedIndex = indexPath.row
+        if let firstUnfoldedIndexPath = unfoldedIndexPaths.first {
+            if firstUnfoldedIndexPath.row <= indexPath.row {
+                adjustedIndex -= firstUnfoldedIndexPath.row
+            }
+        }
+        return element.foldableItems[adjustedIndex]
+    }
+    
+    public func getElement(atIndexPath indexPath: IndexPath) -> FoldableData<T, U> {
+        let section = indexPath.section
+        var row = indexPath.row
+        
+        if !isUnfoldedCell(atIndexPath: indexPath) {
+            if indexPath.row > elements[section].count {
+                row = indexPath.row - unfoldedIndexPaths.count
+            } else if indexPath.row == elements[section].count {
+                row = indexPath.row - 1
+            }
+            return elements[section][row]
+        } else {
+            if let selectedIndexPath = selectedIndexPath {
+                row = selectedIndexPath.row
+                return elements[section][row]
+            }
+        }
+        
+        return elements[section][0]
+    }
+    
+    
+    // MARK - UITableViewDataSource
+    
+    public func numberOfSections(in tableView: UITableView) -> Int {
+        return sections.count
+    }
+    
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        var rows = elements[section].count
+        for foldableData in elements[section] {
+            if foldableData.isUnfolded {
+                rows += foldableData.numberOfFoldableElements()
+            }
+        }
+        return rows
+    }
+    
+    open func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        
+        if isUnfoldedCell(atIndexPath: indexPath) {
+            let unfoldedElement = getUnfoldedElement(atIndexPath: indexPath)
+            cell.textLabel?.text = " • \(unfoldedElement)"
+            return cell
+        }
+        
+        let foldableData = getElement(atIndexPath: indexPath)
+        cell.textLabel?.text = "\(foldableData.data)"
+        
+        return cell
+    }
+    
+    public func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return sections[section]
+    }
+    
+}
+
+extension UIFoldableTableView where T: Equatable {
+    public func getIndexPath(ofData data: T) -> IndexPath? {
+        var sectionResult = 0
+        var rowResult = 0
+        for section in elements {
+            rowResult = 0
+            for foldableData in section {
+                if foldableData.data == data {
+                    let foundIndexPath = IndexPath(row: rowResult, section: sectionResult)
+                    return foundIndexPath
+                }
+                rowResult += 1
+            }
+            sectionResult += 1
+        }
+        return nil
+    }
+}
+
+extension UIFoldableTableView where U: Equatable {
+    public func getParentIndexPath(ofData data: U) -> IndexPath? {
+        var sectionResult = 0
+        var rowResult = 0
+        for section in elements {
+            rowResult = 0
+            for foldableData in section {
+                for item in foldableData.foldableItems {
+                    if item == data {
+                        let foundIndexPath = IndexPath(row: rowResult, section: sectionResult)
+                        return foundIndexPath
+                    }
+                }
+                rowResult += 1
+            }
+            sectionResult += 1
+        }
+        return nil
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+public class UIEmitterAttributeTableViewCell: UITableViewCell {
+    public var attributeTitleLabel = UILabel()
+    public var attribute: Attribute!
+    
+    let borderSpace: CGFloat = 8.0
+    
+    public weak var delegate: UIEmitterAttributeTableViewCellDelegate?
+    
+    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        
+        setup()
+        setupConstraints()
+    }
+    
+    public required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    public override func awakeFromNib() {
+        super.awakeFromNib()
+    }
+    
+    public override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+    }
+    
+    func setup() {
+        self.addSubview(attributeTitleLabel)
+    }
+    
+    func setupConstraints() {
+        // Attribute Title Label Constraints
+        let constraintBuilder = ConstraintBuilder(subview: attributeTitleLabel, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .top, superviewAttribute: .top, constant: borderSpace)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
+            .buildAndApplyConstrains()
+    }
+    
+    func displayAttribute() {
+        attributeTitleLabel.text = attribute.title
+    }
+}
+
+public class UIEmitterAttributeTableViewBasicCell: UIEmitterAttributeTableViewCell {
+    public var descriptionLabel = UILabel()
+    
+    public override func awakeFromNib() {
+        super.awakeFromNib()
+    }
+    
+    public override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+    }
+    
+    public override func setup() {
+        super.setup()
+        self.addSubview(descriptionLabel)
+    }
+    
+    override func setupConstraints() {
+        super.setupConstraints()
+        // Selected Attribute Label Constraints
+        let constraintBuilder = ConstraintBuilder(subview: descriptionLabel, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .top, anotherView: attributeTitleLabel, anotherAttribute: .bottom, constant: borderSpace)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
+            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
+            .buildAndApplyConstrains()
+    }
+}
+
+
+public class UIEmitterAttributeTableViewSliderCell: UIEmitterAttributeTableViewCell {
+    public var attribetuSlider = UISlider()
+    
+    public override func awakeFromNib() {
+        super.awakeFromNib()
+    }
+    
+    public override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+    }
+    
+    override func setup() {
+        super.setup()
+        self.addSubview(attribetuSlider)
+        attribetuSlider.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
+    }
+    
+    override func setupConstraints() {
+        super.setupConstraints()
+        // Attribute Slider Constraints
+        attribetuSlider.translatesAutoresizingMaskIntoConstraints = false
+        let constraintBuilder = ConstraintBuilder(subview: attribetuSlider, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .top, anotherView: attributeTitleLabel, anotherAttribute: .bottom, constant: borderSpace)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
+            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
+            .buildAndApplyConstrains()
+    }
+    
+    @objc func sliderValueChanged(_ sender: UISlider) {
+        delegate?.valueChanged(newValue: sender.value, onAttribute: attribute)
+        displaySelectedValue()
+    }
+    
+    public func displaySelectedValue() {
+        super.displayAttribute()
+        let selectedNumber = attribetuSlider.value
+        let selectedFormattedNumber = String(format: "%.2f", arguments: [selectedNumber])
+        attributeTitleLabel.text?.append(" \(selectedFormattedNumber)")
+    }
+    
+    public func initializeCell(withAttribute attribute: AttributeValueRange) {
+        self.attribute = attribute
+        attribetuSlider.minimumValue = attribute.min
+        attribetuSlider.maximumValue = attribute.max
+    }
+}
+
+
+public class UIEmitterAttributeTableViewTwofoldValueCell: UIEmitterAttributeTableViewCell, UITextFieldDelegate {
+    private var containerStackView = UIStackView()
+    public var inputSlider1 = UISlider()
+    public var inputSlider2 = UISlider()
+    var inputTextLabel1 = UILabel()
+    var inputTextLabel2 = UILabel()
+    
+    
+    public override func awakeFromNib() {
+        super.awakeFromNib()
+    }
+    
+    public override func setSelected(_ selected: Bool, animated: Bool) {
+        super.setSelected(selected, animated: animated)
+    }
+    
+    public override func setup() {
+        super.setup()
+        
+        inputSlider1.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
+        inputSlider2.addTarget(self, action: #selector(sliderValueChanged(_:)), for: .valueChanged)
+        
+        inputTextLabel1.textAlignment = .center
+        inputTextLabel2.textAlignment = .center
+        
+        containerStackView.axis = .horizontal
+        containerStackView.spacing = borderSpace
+        containerStackView.distribution = .fillEqually
+        
+        let leftContainer = UIStackView()
+        leftContainer.axis = .vertical
+        leftContainer.spacing = borderSpace
+        leftContainer.distribution = .fillEqually
+        leftContainer.addArrangedSubview(inputTextLabel1)
+        leftContainer.addArrangedSubview(inputSlider1)
+        
+        let rightContainer = UIStackView()
+        rightContainer.axis = .vertical
+        rightContainer.spacing = borderSpace
+        rightContainer.distribution = .fillEqually
+        rightContainer.addArrangedSubview(inputTextLabel2)
+        rightContainer.addArrangedSubview(inputSlider2)
+        
+        containerStackView.addArrangedSubview(leftContainer)
+        containerStackView.addArrangedSubview(rightContainer)
+        self.addSubview(containerStackView)
+    }
+    
+    override func setupConstraints() {
+        super.setupConstraints()
+        // Attribute Slider Constraints
+        let constraintBuilder = ConstraintBuilder(subview: containerStackView, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
+            .constraint(subviewAttribute: .top, anotherView: attributeTitleLabel, anotherAttribute: .bottom, constant: borderSpace)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
+            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
+            .buildAndApplyConstrains()
+    }
+    
+    @objc func sliderValueChanged(_ sender: UISlider) {
+        delegate?.twoFoldedValueChanged(newValue1: inputSlider1.value, newValue2: inputSlider2.value,
+                                        onAttribute: attribute)
+        displaySelectedValue()
+    }
+    
+    public func displaySelectedValue() {
+        let selectedNumber1 = inputSlider1.value
+        let selectedNumber2 = inputSlider2.value
+        let selectedFormattedNumber1 = String(format: "%.2f", arguments: [selectedNumber1])
+        let selectedFormattedNumber2 = String(format: "%.2f", arguments: [selectedNumber2])
+        if let attribute = attribute as? AttributeTwoValueRange {
+            inputTextLabel1.text = "\(attribute.value1Name) (\(selectedFormattedNumber1))"
+            inputTextLabel2.text = "\(attribute.value2Name) (\(selectedFormattedNumber2))"
+        }
+    }
+    
+    public func initializeCell(withAttribute attribute: AttributeTwoValueRange) {
+        self.attribute = attribute
+        
+        attributeTitleLabel.text = attribute.title
+        
+        inputSlider1.minimumValue = attribute.min1
+        inputSlider1.maximumValue = attribute.max1
+        inputSlider2.minimumValue = attribute.min2
+        inputSlider2.maximumValue = attribute.max2
+        
+        displaySelectedValue()
+    }
     
 }
 
 
-// MARK: - UIEmitterPreviewView
 
 
 
@@ -44,24 +492,35 @@ public class FoldableData<T, U> {
 
 
 
-/************************************
- Emitter CELL Attributes - START
- ************************************/
 
 
 
 
 
-/************************************
- Emitter CELL Attributes - END
- ************************************/
 
 
 
 
-/************************************
- Emitter CELL Attributes - START
- ************************************/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 public class UIEmitterCellAttributesFoldableTableView: UIFoldableTableView<Attribute, String> {
@@ -154,7 +613,7 @@ public class UIEmitterCellAttributesFoldableTableView: UIFoldableTableView<Attri
                     sliderValue2 = Float(emitterCell.contentsRect.height)
                 default: break
                 }
-
+                
             }
             
             cell.inputSlider1.value = sliderValue1
@@ -274,227 +733,6 @@ extension UIEmitterCellAttributesFoldableTableView: UIEmitterAttributeTableViewC
 
 
 
-protocol UIFoldableTableViewDelegate: class {
-    func foldableTableView(didSelectUnfoldedRowAt indexPath: IndexPath)
-}
-
-public class UIFoldableTableView<T, U>: UITableView, UITableViewDataSource, UITableViewDelegate {
-    var sections: [String] = []
-    var elements: [[FoldableData<T, U>]] = []
-    private var selectedIndexPath: IndexPath?
-    private var unfoldedIndexPaths: [IndexPath] = []
-    
-    var foldableDelegate: UIFoldableTableViewDelegate?
-    
-    override init(frame: CGRect, style: UITableViewStyle) {
-        super.init(frame: frame, style: style)
-        setup()
-    }
-    
-    required public init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        setup()
-    }
-    
-    func setup() {
-        self.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-        
-        dataSource = self
-        delegate = self
-    }
-    
-    // MARK - UITableViewDelegate
-    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        if isUnfoldedCell(atIndexPath: indexPath) {
-            foldableDelegate?.foldableTableView(didSelectUnfoldedRowAt: indexPath)
-        } else {
-            let selectedFoldedElement = getElement(atIndexPath: indexPath)
-            if selectedFoldedElement.isFoldable() {
-                let foldBeforeUnfold = selectedIndexPath != indexPath && selectedIndexPath != nil
-                let oldSelectedIndexPath = selectedIndexPath
-                selectedIndexPath = indexPath
-                
-                if selectedFoldedElement.isUnfolded {
-                    selectedFoldedElement.isUnfolded = false
-                    fold()
-                } else {
-                    var indexPath: IndexPath = indexPath
-                    if foldBeforeUnfold {
-                        if let oldSelectedIndexPath = oldSelectedIndexPath {
-                            if oldSelectedIndexPath.section == indexPath.section && oldSelectedIndexPath.row < indexPath.row {
-                                indexPath = IndexPath(row: indexPath.row - unfoldedIndexPaths.count,
-                                                      section: oldSelectedIndexPath.section)
-                            }
-                            let oldSelectedElement = getElement(atIndexPath: oldSelectedIndexPath)
-                            oldSelectedElement.isUnfolded = false
-                            fold()
-                        }
-                    }
-                    selectedFoldedElement.isUnfolded = true
-                    unfold(atIndexPath: indexPath)
-                }
-            } else {
-                if let oldSelectedIndexPath = selectedIndexPath {
-                    let oldSelectedElement = getElement(atIndexPath: oldSelectedIndexPath)
-                    oldSelectedElement.isUnfolded = false
-                    fold()
-                }
-            }
-        }
-    }
-    
-    // MARK: - Fold
-    private func fold() {
-        let indexPathsToDelete = unfoldedIndexPaths
-        unfoldedIndexPaths = []
-        self.deleteRows(at: indexPathsToDelete, with: .right)
-        selectedIndexPath = nil
-    }
-    
-    func fold(atIndexPath indexPath: IndexPath) {
-        let element = getElement(atIndexPath: indexPath)
-        element.isUnfolded = false
-        fold()
-    }
-    
-    
-    // MARK: - Unfold
-    private func unfold(atIndexPath indexPath: IndexPath) {
-        unfoldedIndexPaths = []
-        selectedIndexPath = indexPath
-        
-        createUnfoldIndexPaths(ofSelectedIndexPath: indexPath)
-        self.insertRows(at: unfoldedIndexPaths, with: .left)
-    }
-    
-    private func createUnfoldIndexPaths(ofSelectedIndexPath indexPath: IndexPath) {
-        let selectedElement = getElement(atIndexPath: indexPath)
-        let numberOfUnfoldingSections = selectedElement.foldableItems.count
-        if numberOfUnfoldingSections > 0 {
-            for index in 1...numberOfUnfoldingSections {
-                let unfoldingIndexPath = IndexPath(row: indexPath.row + index, section: indexPath.section)
-                unfoldedIndexPaths.append(unfoldingIndexPath)
-            }
-        }
-    }
-    
-    
-    // MARK: - Hilfsmethoden
-    func isUnfoldedCell(atIndexPath indexPath: IndexPath) -> Bool {
-        return unfoldedIndexPaths.contains(indexPath)
-    }
-    
-    func getUnfoldedElement(atIndexPath indexPath: IndexPath) -> U {
-        let element = getElement(atIndexPath: indexPath)
-        var adjustedIndex = indexPath.row
-        if let firstUnfoldedIndexPath = unfoldedIndexPaths.first {
-            if firstUnfoldedIndexPath.row <= indexPath.row {
-                adjustedIndex -= firstUnfoldedIndexPath.row
-            }
-        }
-        return element.foldableItems[adjustedIndex]
-    }
-    
-    func getElement(atIndexPath indexPath: IndexPath) -> FoldableData<T, U> {
-        let section = indexPath.section
-        var row = indexPath.row
-        
-        if !isUnfoldedCell(atIndexPath: indexPath) {
-            if indexPath.row > elements[section].count {
-                row = indexPath.row - unfoldedIndexPaths.count
-            } else if indexPath.row == elements[section].count {
-                row = indexPath.row - 1
-            }
-            return elements[section][row]
-        } else {
-            if let selectedIndexPath = selectedIndexPath {
-                row = selectedIndexPath.row
-                return elements[section][row]
-            }
-        }
-        
-        return elements[section][0]
-    }
-    
-    
-    // MARK - UITableViewDataSource
-    
-    public func numberOfSections(in tableView: UITableView) -> Int {
-        return sections.count
-    }
-    
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        var rows = elements[section].count
-        for foldableData in elements[section] {
-            if foldableData.isUnfolded {
-                rows += foldableData.numberOfFoldableElements()
-            }
-        }
-        return rows
-    }
-    
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        
-        if isUnfoldedCell(atIndexPath: indexPath) {
-            let unfoldedElement = getUnfoldedElement(atIndexPath: indexPath)
-            cell.textLabel?.text = " • \(unfoldedElement)"
-            return cell
-        }
-        
-        let foldableData = getElement(atIndexPath: indexPath)
-        cell.textLabel?.text = "\(foldableData.data)"
-        
-        return cell
-    }
-    
-    public func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return sections[section]
-    }
-    
-}
-
-extension UIFoldableTableView where T: Equatable {
-    func getIndexPath(ofData data: T) -> IndexPath? {
-        var sectionResult = 0
-        var rowResult = 0
-        for section in elements {
-            rowResult = 0
-            for foldableData in section {
-                if foldableData.data == data {
-                    let foundIndexPath = IndexPath(row: rowResult, section: sectionResult)
-                    return foundIndexPath
-                }
-                rowResult += 1
-            }
-            sectionResult += 1
-        }
-        return nil
-    }
-}
-
-extension UIFoldableTableView where U: Equatable {
-    func getParentIndexPath(ofData data: U) -> IndexPath? {
-        var sectionResult = 0
-        var rowResult = 0
-        for section in elements {
-            rowResult = 0
-            for foldableData in section {
-                for item in foldableData.foldableItems {
-                    if item == data {
-                        let foundIndexPath = IndexPath(row: rowResult, section: sectionResult)
-                        return foundIndexPath
-                    }
-                }
-                rowResult += 1
-            }
-            sectionResult += 1
-        }
-        return nil
-    }
-}
 
 
 
@@ -502,11 +740,12 @@ extension UIFoldableTableView where U: Equatable {
 
 
 
-class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, String> {
+
+public class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, String> {
     
     weak var emitter: CAEmitterLayer!
     
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    override public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let tableView = tableView as? UIFoldableTableView<Attribute, String> else { return UITableViewCell() }
         
         // create expanded cell
@@ -600,7 +839,7 @@ class UIEmitterAttributesFoldableTableView: UIFoldableTableView<Attribute, Strin
 
 
 extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellDelegate {
-    func valueChanged(newValue: Float, onAttribute attribute: Attribute) {
+    public func valueChanged(newValue: Float, onAttribute attribute: Attribute) {
         
         switch attribute.type {
         case EmitterLayerGeometryAttribute.emitterZPosition:
@@ -624,8 +863,8 @@ extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellD
         }
     }
     
-    func twoFoldedValueChanged(newValue1: Float, newValue2: Float, onAttribute attribute: Attribute) {
-
+    public func twoFoldedValueChanged(newValue1: Float, newValue2: Float, onAttribute attribute: Attribute) {
+        
         switch attribute.type {
         case EmitterLayerGeometryAttribute.emitterPosition:
             emitter.emitterPosition = CGPoint(x: CGFloat(newValue1),
@@ -637,6 +876,42 @@ extension UIEmitterAttributesFoldableTableView: UIEmitterAttributeTableViewCellD
         }
     }
 }
+
+
+
+// MARK: - UIEmitterPreviewView
+
+
+
+
+
+
+/************************************
+ Emitter CELL Attributes - START
+ ************************************/
+
+
+
+
+
+/************************************
+ Emitter CELL Attributes - END
+ ************************************/
+
+
+
+
+/************************************
+ Emitter CELL Attributes - START
+ ************************************/
+
+
+
+
+
+
+
+
 
 
 
@@ -745,8 +1020,8 @@ class UIEmitterCellsOverviewTableView: UITableView, UITableViewDataSource, UITab
 
 class ViewController: UIViewController, UIFoldableTableViewDelegate {
     private var emitterPreview = UIEmitterPreviewView()
-    private var emitterTableView = UIEmitterAttributesFoldableTableView()
-    private var emitterCellTableView = UIEmitterCellAttributesFoldableTableView()
+    private var emitterTableView = UIEmitterAttributesFoldableTableView(frame: CGRect.zero, style: UITableViewStyle.plain)
+    private var emitterCellTableView = UIEmitterCellAttributesFoldableTableView(frame: CGRect.zero, style: UITableViewStyle.plain)
     private var emitterCellOverview = UIEmitterCellsOverviewTableView()
     
     var menuButton = MenuButton(frame: CGRect.zero)
