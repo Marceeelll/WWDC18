@@ -10,7 +10,6 @@ public protocol Expandable: class {
     var isMenuExpanded: Bool { get set }
     var startFromPoint: CGPoint? { get set }
     var endAtPoint: CGPoint? { get set }
-    var expandingDirection: Direction { get set }
 }
 
 
@@ -107,7 +106,7 @@ public extension Expandable where Self: UIView {
             }
         }
         
-        let radian = toRadian(degree: adjustedDegree, startFrom: expandingDirection)
+        let radian = toRadian(degree: adjustedDegree, startFrom: .top)
         var point = calculatePoint(withRadius: 100.0, andRadian: radian)
         point.x += self.layer.position.x
         point.y += self.layer.position.y
@@ -174,8 +173,6 @@ public extension Expandable where Self: UIView {
         case .bottom: return toRadian(degree: degree) + toRadian(degree: 90.0)
         case .left: return toRadian(degree: degree) + toRadian(degree: 180.0)
         case .top: return toRadian(degree: degree) + toRadian(degree: 270.0)
-        case .degree(let degreeToAdd): return toRadian(degree: degree) + toRadian(degree: degreeToAdd)
-        case .radian(let radianToAdd): return toRadian(degree: degree) + radianToAdd
         }
     }
     
@@ -190,8 +187,6 @@ public enum Direction {
     case bottom
     case left
     case top
-    case degree(CGFloat)
-    case radian(CGFloat)
 }
 
 
@@ -204,7 +199,6 @@ public class MenuButton: UIButton, Expandable {
     public var isMenuExpanded: Bool = false
     public var startFromPoint: CGPoint?
     public var endAtPoint: CGPoint?
-    public var expandingDirection: Direction = .left
     
     public override init(frame: CGRect) {
         super.init(frame: frame)

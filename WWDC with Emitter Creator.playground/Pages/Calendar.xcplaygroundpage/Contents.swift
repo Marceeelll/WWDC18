@@ -4,155 +4,6 @@ import UIKit
 import PlaygroundSupport
 import AVFoundation
 
-
-public protocol UICalendarDayOverviewTableViewDelegate {
-    func overviewTableView(_ tableView: UICalendarDayOverviewTableView, didSelectedEvent event: Event)
-}
-
-public class UICalendarDayOverviewTableView: UITableView {
-    public var data: [Event] = []
-    public var selectedDate: Date?
-    
-    public var overViewDelegate: UICalendarDayOverviewTableViewDelegate?
-    
-    public override init(frame: CGRect, style: UITableViewStyle) {
-        super.init(frame: frame, style: style)
-        setup()
-    }
-    
-    public required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        setup()
-    }
-    
-    func setup() {
-        self.dataSource = self
-        self.delegate = self
-    }
-    
-}
-
-extension UICalendarDayOverviewTableView: UITableViewDataSource {
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return data.count
-    }
-    
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! UICalendarDayOverviewTableViewCell
-        let event = getEvent(atIndexPath: indexPath)
-        cell.descriptionLabel.text = "\(event.type.symbol)\(event.title)"
-        if let selectedDate = selectedDate {
-            let times = event.getTimes(forDate: selectedDate)
-            cell.startTimeLabel.text = times.startTime
-            cell.endTimeLabel.text = times.endTime
-        }
-        
-        cell.flipCell()
-        cell.seperatorView.backgroundColor = event.type.color
-        return cell
-    }
-    
-    public func getEvent(atIndexPath indexPath: IndexPath) -> Event {
-        return  data[indexPath.row]
-    }
-}
-
-extension UICalendarDayOverviewTableView: UITableViewDelegate {
-    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let selectedEvent = getEvent(atIndexPath: indexPath)
-        overViewDelegate?.overviewTableView(self, didSelectedEvent: selectedEvent)
-    }
-}
-
-
-
-// START -- UICalendarDayOverviewTableViewCell
-
-public class UICalendarDayOverviewTableViewCell: UITableViewCell {
-    private var timeStackView = UIStackView()
-    public var startTimeLabel = UILabel()
-    public var endTimeLabel = UILabel()
-    public var descriptionLabel = UILabel()
-    public var eventImageView = UILabel()
-    public var seperatorView = UIView()
-    
-    private let borderSpace: CGFloat = 8.0
-    
-    let fontTest = UIFont(name: "Helvetica", size: 12.0)
-    
-    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        
-        setup()
-        setupConstraints()
-    }
-    
-    public required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    public override func awakeFromNib() {
-        super.awakeFromNib()
-    }
-    
-    public override func setSelected(_ selected: Bool, animated: Bool) {
-        super.setSelected(selected, animated: animated)
-    }
-    
-    func setup() {
-        timeStackView.addArrangedSubview(startTimeLabel)
-        timeStackView.addArrangedSubview(endTimeLabel)
-        timeStackView.alignment = .fill
-        timeStackView.distribution = .fillEqually
-        timeStackView.axis = .vertical
-        self.addSubview(timeStackView)
-        
-        startTimeLabel.font = fontTest
-        startTimeLabel.textAlignment = .right
-        endTimeLabel.font = fontTest
-        endTimeLabel.textAlignment = .right
-        
-        seperatorView.backgroundColor = UIColor.blue
-        self.addSubview(seperatorView)
-        
-        self.addSubview(descriptionLabel)
-    }
-    
-    func setupConstraints() {
-        let stackViewCB = ConstraintBuilder(subview: timeStackView, superview: self)
-        stackViewCB.constraint(subviewAttribute: .left, superviewAttribute: .left, constant: borderSpace)
-            .constraint(subviewAttribute: .top, superviewAttribute: .top, constant: borderSpace)
-            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
-            .constraint(subviewAttribute: .width, constant: 55.0)
-            .buildAndApplyConstrains()
-        
-        let seperatorViewCB = ConstraintBuilder(subview: seperatorView, superview: self)
-        seperatorViewCB.constraint(subviewAttribute: .top, superviewAttribute: .top, constant: borderSpace)
-            .constraint(subviewAttribute: .left, anotherView: timeStackView, anotherAttribute: .right, constant: borderSpace/2)
-            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
-            .constraint(subviewAttribute: .width, constant: 2.0)
-            .buildAndApplyConstrains()
-        
-        let descLabelCB = ConstraintBuilder(subview: descriptionLabel, superview: self)
-        descLabelCB.constraint(subviewAttribute: .top, superviewAttribute: .top, constant: borderSpace)
-            .constraint(subviewAttribute: .left, anotherView: seperatorView, anotherAttribute: .right, multiplier: 1.0, constant: borderSpace/2)
-            .constraint(subviewAttribute: .bottom, superviewAttribute: .bottom, constant: -borderSpace)
-            .constraint(subviewAttribute: .right, superviewAttribute: .right, constant: -borderSpace)
-            .buildAndApplyConstrains()
-    }
-    
-    func flipCell() {
-        UIView.transition(with: self, duration: AnimationDuration.normal, options: .transitionFlipFromTop, animations: {})
-    }
-    
-}
-
-
-
-// END
-
-
 struct Particle {
     var emitter: CAEmitterLayer
     var startDelay: Double
@@ -578,15 +429,6 @@ class ViewController: UIViewController {
     
     let eventCtrl = EventController()
     var particleCtrl: ParticleController!
-    
-    var menuButton = MenuButton(frame: CGRect.zero)
-    var expandingMenuButton1 = UIButton()
-    var expandingMenuButton2 = UIButton()
-    var expandingMenuButton3 = UIButton()
-    
-    var calendarRepresentation: CalendarRepresentation = .calendar
-    
-    var calendarHeightConstraint: NSLayoutConstraint!
 
     var dataSource: UICalendarViewDataSource! {
         didSet {
@@ -626,37 +468,6 @@ class ViewController: UIViewController {
         dataSource = UICalendarViewDataSource()
         calendarView.delegate = self
         calendarView.drawCalendar()
-        
-        setup()
-    }
-    
-    func setup() {
-        // Expandable Menu
-        expandingMenuButton1.setImage(calendarRepresentation.opositeImage, for: .normal)
-        expandingMenuButton2.setImage(UIImage(named: "icon_filter_white.png"), for: .normal)
-        expandingMenuButton3.setImage(UIImage(named: "icon_swift_white.png"), for: .normal)
-        
-        expandingMenuButton1.addTarget(self, action: #selector(switchCalendarRepresentation), for: .touchUpInside)
-//        expandingMenuButton2.addTarget(self, action: #selector(editEmitterCellAction(_:)), for: .touchUpInside)
-//        expandingMenuButton3.addTarget(self, action: #selector(showEmitterInDevMode(_:)), for: .touchUpInside)
-        
-        menuButton.append(expandingView: expandingMenuButton1)
-        menuButton.append(expandingView: expandingMenuButton2)
-        menuButton.append(expandingView: expandingMenuButton3)
-        
-        let menuButtonHeight: CGFloat = 50.0
-        
-        menuButton.frame = CGRect(x: 0, y: 0,
-                                  width: menuButtonHeight, height: menuButtonHeight)
-        menuButton.center = CGPoint(x: 330, y: 630)
-        menuButton.addTarget(self, action: #selector(toggleButtonMenu(_:)), for: .touchUpInside)
-        menuButton.titleLabel?.adjustsFontSizeToFitWidth = true
-        menuButton.titleLabel?.font = UIFont(name: "Helvetica", size: 31.0)
-        menuButton.setTitle("+", for: .normal)
-        menuButton.backgroundColor = UIColor.black
-        menuButton.layer.cornerRadius = menuButton.frame.width/2
-        menuButton.expandingDirection = .degree(225)
-        self.view.addSubview(menuButton)
     }
 
     func setupConstraints() {
@@ -665,13 +476,8 @@ class ViewController: UIViewController {
         constraintBuilder.constraint(subviewAttribute: .top, superviewAttribute: .top, multiplier: 1.0, constant: 44.0)
             .constraint(subviewAttribute: .left, superviewAttribute: .left, multiplier: 1.0, constant: 0.0)
             .constraint(subviewAttribute: .right, superviewAttribute: .right, multiplier: 1.0, constant: 0.0)
+            .constraint(subviewAttribute: .height, multiplier: 1.0, constant: 300)
             .buildAndApplyConstrains()
-        
-        calendarHeightConstraint = NSLayoutConstraint(item: calendarView,
-                                                      attribute: .height, relatedBy: .equal,
-                                                      toItem: nil, attribute: .notAnAttribute,
-                                                      multiplier: 1.0, constant: 300.0)
-        self.view.addConstraint(calendarHeightConstraint)
         
         ConstraintAssistant.addConstraints(on: calenderDayOverviewTableView,
                                            inSuperView: self.view,
@@ -687,69 +493,8 @@ class ViewController: UIViewController {
         calendarView.delegate = self
         calendarView.drawCalendar()
     }
-    
-    @objc func toggleButtonMenu(_ sender: MenuButton? = nil) {
-        menuButton.toggle(onView: view)
-    }
-    
-    @objc func switchCalendarRepresentation() {
-        if !menuButton.isRunningAnimation {
-            toggleButtonMenu()
-            toggleCalendarRepresentation()
-            adjustCalendarConstraintForRepresentationMode()
-        }
-    }
-    
-    func toggleCalendarRepresentation() {
-        switch calendarRepresentation {
-        case .calendar: calendarRepresentation = .list
-        case .list: calendarRepresentation = .calendar
-        }
-        self.expandingMenuButton1.setImage(self.calendarRepresentation.opositeImage, for: .normal)
-    }
-    
-    func adjustCalendarConstraintForRepresentationMode() {
-//        if let calendarHeightConstraint = calendarHeightConstraint {
-//            self.view.removeConstraint(calendarHeightConstraint)
-//        }
-        var calendarHeight: CGFloat
-        switch calendarRepresentation {
-        case .list:
-            calendarHeight = 0.0
-            print("MAKE TO LIST")
-        case .calendar:
-            calendarHeight = 300.0
-            print("SHOW CALENDAR")
-        }
-//        if let calendarHeightConstraint = calendarHeightConstraint {
-//            self.view.addConstraint(calendarHeightConstraint)
-//        }
-        calendarHeightConstraint?.constant = calendarHeight
-        
-        UIView.animate(withDuration: 1.0) {
-//            self.calendarView.isHidden = true
-            self.view.layoutIfNeeded()
-        }
-    }
-    
-    enum CalendarRepresentation {
-        case list
-        case calendar
-        
-        var image: UIImage? {
-            switch self {
-            case .list: return UIImage(named: "icon_list_white.png")
-            case .calendar: return UIImage(named: "icon_calendar_white.png")
-            }
-        }
-        
-        var opositeImage: UIImage? {
-            switch self {
-            case .list: return  UIImage(named: "icon_calendar_white.png")
-            case .calendar: return UIImage(named: "icon_list_white.png")
-            }
-        }
-    }
+
+    var player: AVAudioPlayer?
 }
 
 
