@@ -1,4 +1,4 @@
-import Foundation
+import UIKit
 
 extension IndexPath {
     var day: Int {
@@ -10,5 +10,14 @@ extension IndexPath {
     
     init(day: Int, week: Int) {
         self = IndexPath(row: day, section: week)
+    }
+}
+
+
+public extension UIImageView {
+    public func dyeImage(imageColor: UIColor) {
+        let coloredImage = self.image?.withRenderingMode(.alwaysTemplate)
+        self.tintColor = imageColor
+        self.image = coloredImage
     }
 }
