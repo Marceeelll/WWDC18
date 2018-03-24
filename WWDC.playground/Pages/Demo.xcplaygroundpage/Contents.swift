@@ -32,3 +32,5 @@ let isFullTime: Bool = false
 
 //let createdEvent = Event(title: <#T##String#>, startDate: <#T##Date#>, endDate: <#T##Date#>, type: <#T##EventType#>, isFullTime: <#T##Bool#>)
 
+
+let showEventTypes: [EventType] = [EventType.birthday, .wwdc]

@@ -27,6 +27,7 @@ public class UICalendarViewDataSource: NSObject, UICalendarViewDataSourceProtoco
     
     
     // MARK: - Initializer
+    
     public override init() {
         let today = Date()
         let month = calendarOperations.getMonth(from: today)
@@ -34,6 +35,16 @@ public class UICalendarViewDataSource: NSObject, UICalendarViewDataSourceProtoco
         self.currentMonth = month
         self.currentYear = year
         self.current = today
+        super.init()
+        initializing()
+    }
+    
+    public init(date: Date) {
+        let month = calendarOperations.getMonth(from: date)
+        let year = calendarOperations.getYear(from: date)
+        self.currentMonth = month
+        self.currentYear = year
+        self.current = date
         super.init()
         initializing()
     }

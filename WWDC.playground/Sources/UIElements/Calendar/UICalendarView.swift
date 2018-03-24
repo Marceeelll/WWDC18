@@ -49,13 +49,24 @@ public class UICalendarView: UIView {
         let headerView = createHeader()
         self.addSubview(headerView)
         
-        var headerViewHeight: CGFloat = 0
-        switch (showHeader, showMonthInHeader) {
-        case (true, true): headerViewHeight = headerWithMonthHeight
-        case (true, false): headerViewHeight = headerHeight
-        default: headerViewHeight = 0
-        }
-        ConstraintAssistant.addConstraints(on: headerView, withSuperView: self, withHeightConstant: headerViewHeight, attachToTop: true)
+//        var headerViewHeight: CGFloat = 0
+//        switch (showHeader, showMonthInHeader) {
+//        case (true, true): headerViewHeight = headerWithMonthHeight
+//        case (true, false): headerViewHeight = headerHeight
+//        default: headerViewHeight = 0
+//        }
+//        ConstraintAssistant.addConstraints(on: headerView, withSuperView: self, withHeightConstant: headerViewHeight, attachToTop: true)
+        // jump
+        let constraintBuilder = ConstraintBuilder(subview: headerView, superview: self)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left)
+            .constraint(subviewAttribute: .top, superviewAttribute: .top)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right)
+            .buildAndApplyConstrains()
+        let heightConstraint = NSLayoutConstraint(item: headerView,
+                                                  attribute: .height, relatedBy: .equal,
+                                                  toItem: self, attribute: .height,
+                                                  multiplier: 0.25, constant: 0.0)
+        self.addConstraint(heightConstraint)
         
         // Calendar Month View
         let calendarMonthCollectionView = createCalendarMonthCollectionView()
@@ -78,10 +89,21 @@ public class UICalendarView: UIView {
         // Month Header
         let headerMonthStackView = createMonthHeader(in: headerView)
         headerView.addSubview(headerMonthStackView)
-        if showMonthInHeader {
-            let monthHeaderHeight = headerWithMonthHeight - headerHeight
-            ConstraintAssistant.addConstraints(on: headerMonthStackView, withSuperView: headerView, withHeightConstant: monthHeaderHeight, attachToTop: true)
-        }
+//        if showMonthInHeader {
+//            let monthHeaderHeight = headerWithMonthHeight - headerHeight
+//            ConstraintAssistant.addConstraints(on: headerMonthStackView, withSuperView: headerView, withHeightConstant: monthHeaderHeight, attachToTop: true)
+//        }
+        
+        let constraintBuilder = ConstraintBuilder(subview: headerMonthStackView, superview: headerView)
+        constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left)
+            .constraint(subviewAttribute: .top, superviewAttribute: .top)
+            .constraint(subviewAttribute: .right, superviewAttribute: .right)
+            .buildAndApplyConstrains()
+        let heightConstraint = NSLayoutConstraint(item: headerMonthStackView,
+                                                  attribute: .height, relatedBy: .equal,
+                                                  toItem: headerView, attribute: .height,
+                                                  multiplier: 0.6, constant: 0.0)
+        headerView.addConstraint(heightConstraint)
         
         // Weekday Header
         let headerWeekdayStackView = createWeekdayHeaderStackView(in: headerView)
@@ -99,6 +121,7 @@ public class UICalendarView: UIView {
         previousMonthButton.setTitleColor(AppColor.Theme.main, for: .normal)
         previousMonthButton.addTarget(self, action: #selector(pressedPreviousMonth(button:)), for: .touchUpInside)
         previousMonthButton.backgroundColor = AppColor.Calendar.headerButton
+        previousMonthButton.clipsToBounds = true
         
         // month label - in the middle
         let monthLabel = UILabel()
@@ -114,6 +137,7 @@ public class UICalendarView: UIView {
         nextMonthButton.setTitleColor(AppColor.Theme.main, for: .normal)
         nextMonthButton.addTarget(self, action: #selector(pressedNextMonth(button:)), for: .touchUpInside)
         nextMonthButton.backgroundColor = AppColor.Calendar.headerButton
+        nextMonthButton.clipsToBounds = true
         
         headerMonthStackView.addArrangedSubview(previousMonthButton)
         headerMonthStackView.addArrangedSubview(monthLabel)
@@ -121,7 +145,7 @@ public class UICalendarView: UIView {
         
         ConstraintAssistant.addWidth(on: previousMonthButton, inSuperview: headerMonthStackView, width: headerButtonWidth)
         ConstraintAssistant.addWidth(on: nextMonthButton, inSuperview: headerMonthStackView, width: headerButtonWidth)
-        
+
         return headerMonthStackView
     }
     

@@ -9,6 +9,8 @@ public enum EventType {
     case important
     case none
     
+    public static var allEventTypes: [EventType] = [EventType.birthday, .christmas, .wwdc, .newYear, .holiday, .important, .none]
+    
     public var symbol: String {
         switch self {
         case .birthday: return "🎂"
@@ -18,6 +20,18 @@ public enum EventType {
         case .holiday: return "🌴"
         case .important: return "⚠️"
         case .none: return ""
+        }
+    }
+    
+    public var name: String {
+        switch self {
+        case .birthday: return "Birthday"
+        case .christmas: return "Christmas"
+        case .wwdc: return "WWDC 2018"
+        case .newYear: return "New Year"
+        case .holiday: return "Holiday"
+        case .important: return "Important"
+        case .none: return "No Category"
         }
     }
     

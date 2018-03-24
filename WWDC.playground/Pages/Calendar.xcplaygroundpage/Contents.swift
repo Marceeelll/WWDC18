@@ -505,16 +505,16 @@ public class ParticleController {
             
             var cells: [CAEmitterCell] = []
             
-            for index in 0..<9 {
+            for index in 0..<10 {
                 let cell = CAEmitterCell()
                 
-                cell.birthRate = 2.0
+                cell.birthRate = 2
                 cell.lifetime = 5.0
                 cell.lifetimeRange = 0
                 cell.emissionLongitude = CGFloat.pi
                 cell.spinRange = 0.7
                 cell.scaleRange = 0.25
-                cell.scale = 0.2
+                cell.scale = 0.5
                 cell.emissionRange = 0.71
                 cell.velocityRange = 20.0
                 cell.velocity = -247.0
@@ -545,9 +545,15 @@ public class ParticleController {
     }
     
     func getRandomColor() -> UIColor {
-        let numberOfColors = AppColor.Apple.allColors.count
+        let colors: [UIColor] = [AppColor.Apple.blue,
+                                 AppColor.Apple.green,
+                                 AppColor.Apple.orange,
+                                 AppColor.Apple.purple,
+                                 AppColor.Apple.red,
+                                 AppColor.Apple.yellow]
+        let numberOfColors = colors.count
         let randomIndex = Int(arc4random_uniform(UInt32(numberOfColors)))
-        return AppColor.Apple.allColors[randomIndex]
+        return colors[randomIndex]
     }
     
     func image(fromText: Character) -> UIImage? {
@@ -576,21 +582,24 @@ class ViewController: UIViewController {
     var calendarView: UICalendarView = UICalendarView()
     var calenderDayOverviewTableView = UICalendarDayOverviewTableView()
     
-    let eventCtrl = EventController()
+    var eventCtrl: EventController!
     var particleCtrl: ParticleController!
     
     var menuButton = MenuButton(frame: CGRect.zero)
     var expandingMenuButton1 = UIButton()
     var expandingMenuButton2 = UIButton()
-    var expandingMenuButton3 = UIButton()
+    
+    var eventFilters: [EventType] = EventType.allEventTypes
     
     var calendarRepresentation: CalendarRepresentation = .calendar
     
     var calendarHeightConstraint: NSLayoutConstraint!
+    
+    var selectedDate: Date = Date()
 
     var dataSource: UICalendarViewDataSource! {
         didSet {
-            dataSource.datesWithEvent = eventCtrl.dates
+            dataSource.datesWithEvent = eventCtrl.getDates(forFilter: eventFilters)
             calendarView.dataSource = dataSource
         }
     }
@@ -599,18 +608,17 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        eventCtrl.createDemonstrationEvents()
+        eventCtrl = EventController(filter: eventFilters)
         
         particleCtrl = ParticleController(layer: self.view.layer)
         calenderDayOverviewTableView.register(UICalendarDayOverviewTableViewCell.self, forCellReuseIdentifier: "cell")
         
+        navigationController?.navigationBar.tintColor = AppColor.Theme.main
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Today", style: .plain, target: self, action: #selector(selectToday))
 
-        self.view.backgroundColor = UIColor.lightGray
+        self.view.backgroundColor = UIColor.white
         
-        let today = Date()
-        calenderDayOverviewTableView.data = eventCtrl.getEvents(forDate: today)
-        calenderDayOverviewTableView.selectedDate = today
+        selectToday()
         calenderDayOverviewTableView.overViewDelegate = self
         
         self.view.addSubview(calenderDayOverviewTableView)
@@ -634,15 +642,12 @@ class ViewController: UIViewController {
         // Expandable Menu
         expandingMenuButton1.setImage(calendarRepresentation.opositeImage, for: .normal)
         expandingMenuButton2.setImage(UIImage(named: "icon_filter_white.png"), for: .normal)
-        expandingMenuButton3.setImage(UIImage(named: "icon_swift_white.png"), for: .normal)
         
         expandingMenuButton1.addTarget(self, action: #selector(switchCalendarRepresentation), for: .touchUpInside)
-//        expandingMenuButton2.addTarget(self, action: #selector(editEmitterCellAction(_:)), for: .touchUpInside)
-//        expandingMenuButton3.addTarget(self, action: #selector(showEmitterInDevMode(_:)), for: .touchUpInside)
+        expandingMenuButton2.addTarget(self, action: #selector(showFilterScreen), for: .touchUpInside)
         
         menuButton.append(expandingView: expandingMenuButton1)
         menuButton.append(expandingView: expandingMenuButton2)
-        menuButton.append(expandingView: expandingMenuButton3)
         
         let menuButtonHeight: CGFloat = 50.0
         
@@ -680,10 +685,15 @@ class ViewController: UIViewController {
     
     @objc func selectToday() {
         let today = Date()
-        calenderDayOverviewTableView.data = eventCtrl.getEvents(forDate: today)
-        calenderDayOverviewTableView.selectedDate = today
+        selectedDate = today
+        reloadWith(date: today)
+    }
+    
+    func reloadWith(date: Date) {
+        calenderDayOverviewTableView.data = eventCtrl.getEvents(forDate: date, andFilters: eventFilters)
+        calenderDayOverviewTableView.selectedDate = date
         calenderDayOverviewTableView.reloadData()
-        dataSource = UICalendarViewDataSource()
+        dataSource = UICalendarViewDataSource(date: date)
         calendarView.delegate = self
         calendarView.drawCalendar()
     }
@@ -709,26 +719,28 @@ class ViewController: UIViewController {
     }
     
     func adjustCalendarConstraintForRepresentationMode() {
-//        if let calendarHeightConstraint = calendarHeightConstraint {
-//            self.view.removeConstraint(calendarHeightConstraint)
-//        }
         var calendarHeight: CGFloat
         switch calendarRepresentation {
         case .list:
             calendarHeight = 0.0
-            print("MAKE TO LIST")
         case .calendar:
             calendarHeight = 300.0
-            print("SHOW CALENDAR")
         }
-//        if let calendarHeightConstraint = calendarHeightConstraint {
-//            self.view.addConstraint(calendarHeightConstraint)
-//        }
         calendarHeightConstraint?.constant = calendarHeight
+        reloadWith(date: selectedDate)
         
         UIView.animate(withDuration: 1.0) {
-//            self.calendarView.isHidden = true
             self.view.layoutIfNeeded()
+        }
+    }
+    
+    @objc func showFilterScreen() {
+        if !menuButton.isRunningAnimation {
+            toggleButtonMenu()
+            let filterVCtrl = FilterEventTypesViewController()
+            filterVCtrl.selectedFilter = eventFilters
+            filterVCtrl.filterDelegate = self
+            navigationController?.pushViewController(filterVCtrl, animated: true)
         }
     }
     
@@ -755,10 +767,11 @@ class ViewController: UIViewController {
 
 extension ViewController: UICalendarViewDelegateProtocol {
     func calendarView(_ calendarView: UICalendarView, didSelectedDate selectedDate: Date) {
+        self.selectedDate = selectedDate
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
         self.title = dateFormatter.string(from: selectedDate)
-        let eventsOnSelectedDay = eventCtrl.getEvents(forDate: selectedDate)
+        let eventsOnSelectedDay = eventCtrl.getEvents(forDate: selectedDate, andFilters: eventFilters)
         calenderDayOverviewTableView.data = eventsOnSelectedDay
         calenderDayOverviewTableView.selectedDate = selectedDate
         calenderDayOverviewTableView.reloadData()
@@ -775,6 +788,73 @@ extension ViewController: UICalendarViewDelegateProtocol {
 extension ViewController: UICalendarDayOverviewTableViewDelegate {
     func overviewTableView(_ tableView: UICalendarDayOverviewTableView, didSelectedEvent event: Event) {
         particleCtrl.startParticleAnimation(forEventType: event.type)
+    }
+}
+
+extension ViewController: FilterEventTypesDelegate {
+    func receiveNew(filterSelection: [EventType]) {
+        eventFilters = filterSelection
+        reloadWith(date: selectedDate)
+    }
+}
+
+protocol FilterEventTypesDelegate {
+    func receiveNew(filterSelection: [EventType])
+}
+
+class FilterEventTypesViewController: UITableViewController {
+    var selectedFilter: [EventType]!
+    
+    var filterDelegate: FilterEventTypesDelegate?
+    
+    override func viewDidLoad() {
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        filterDelegate?.receiveNew(filterSelection: selectedFilter)
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return EventType.allEventTypes.count
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
+        let eventType = getEventType(atIndexPath: indexPath)
+        cell.textLabel?.text = "\(eventType.symbol)\(eventType.name)"
+        cell.accessoryType = isSelected(eventType: eventType) ? .checkmark : .none
+        return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        let selectedEventType = getEventType(atIndexPath: indexPath)
+        if selectedFilter.contains(selectedEventType) {
+            remove(selectedEventType: selectedEventType)
+        } else {
+            selectedFilter.append(selectedEventType)
+        }
+        tableView.reloadRows(at: [indexPath], with: .none)
+    }
+    
+    func getEventType(atIndexPath indexPath: IndexPath) -> EventType {
+        return EventType.allEventTypes[indexPath.row]
+    }
+    
+    func isSelected(eventType: EventType) -> Bool {
+        return selectedFilter.contains(eventType)
+    }
+    
+    func remove(selectedEventType: EventType) {
+        for index in 0..<selectedFilter.count {
+            let eventType = selectedFilter[index]
+            if eventType == selectedEventType {
+                selectedFilter.remove(at: index)
+                break
+            }
+        }
     }
 }
 

@@ -1,13 +1,15 @@
 import Foundation
 
 public class EventController {
-    public var events: [Event] = []
-    public var dates: [Date] = []
+    private var events: [Event] = []
+    public var filter: [EventType] = []
     
-    public init() {
+    public init(filter: [EventType]) {
+        self.filter = filter
+        createDemonstrationEvents()
     }
     
-    public func createDemonstrationEvents() {
+    private func createDemonstrationEvents() {
         let interval: TimeInterval = 60*5
         events = [Event(title: "BIRTHDAY",
                         startDate: Date(),
@@ -89,23 +91,28 @@ public class EventController {
                         startDate: Date(timeIntervalSince1970: 1542963600),
                         endDate: Date(timeIntervalSince1970: 1543003200),
                         type: .important, isFullTime: false)]
-        
-        var dateSet: Set<Date> = []
-        for event in events {
-            for date in event.getDatesBetweenStartAndEnd() {
-                dateSet.insert(date)
-            }
-        }
-        dates = Array(dateSet)
     }
     
-    public func getEvents(forDate date: Date) -> [Event] {
+    
+    public func getEvents(forDate date: Date, andFilters filters: [EventType]) -> [Event] {
         var result: [Event] = []
         for event in events {
-            if event.isDateBetweenStartAndEndDate(dateToCheck: date) {
+            if event.isDateBetweenStartAndEndDate(dateToCheck: date) && filters.contains(event.type) {
                 result.append(event)
             }
         }
         return result
+    }
+    
+    public func getDates(forFilter filters: [EventType]) -> [Date] {
+        var dateSet: Set<Date> = []
+        for event in events {
+            for date in event.getDatesBetweenStartAndEnd() {
+                if filters.contains(event.type) {
+                    dateSet.insert(date)
+                }
+            }
+        }
+        return Array(dateSet)
     }
 }
