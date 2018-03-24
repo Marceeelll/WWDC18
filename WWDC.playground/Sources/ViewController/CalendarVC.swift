@@ -1,27 +1,7 @@
-//: Playground - noun: a place where people can play
-
 import UIKit
-import PlaygroundSupport
 
 
-
-
-let name = "Marcel Hagmann"
-let day = 26
-let month = 03
-let year = 2000
-
-
-let birthdayCtrl = BirthdayController()
-var userBirthdayEvents: [Event] = []
-if let person = birthdayCtrl.createPerson(name: name, birthdayDay: day, birthdayMonth: month, birthdayYear: year) {
-    userBirthdayEvents = birthdayCtrl.addPersonToCalendar(person: person)
-}
-
-
-
-
-class ViewController: UIViewController {
+public class CalendarViewController: UIViewController {
     var calendarView: UICalendarView = UICalendarView()
     var calenderDayOverviewTableView = UICalendarDayOverviewTableView()
     
@@ -40,24 +20,27 @@ class ViewController: UIViewController {
     var calendarTopConstraint: NSLayoutConstraint!
     
     var selectedDate: Date = Date()
-
+    var selectedWeekdayStart: UICalendarWeekday = .monday
+    
     var dataSource: UICalendarViewDataSource! {
         didSet {
             dataSource.datesWithEvent = eventCtrl.getDates(forFilter: eventFilters)
+            dataSource.startWeekOn = selectedWeekdayStart
             calendarView.dataSource = dataSource
         }
     }
     
-    init(userBirthdayEvents: [Event]) {
+    public init(userBirthdayEvents: [Event], selectedWeekdayStart: UICalendarWeekday) {
         self.userBirthdayEvents = userBirthdayEvents
+        self.selectedWeekdayStart = selectedWeekdayStart
         super.init(nibName: nil, bundle: nil)
     }
     
-    required init?(coder aDecoder: NSCoder) {
+    required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
     
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
         
         eventCtrl = EventController(filter: eventFilters, events: userBirthdayEvents)
@@ -67,7 +50,7 @@ class ViewController: UIViewController {
         
         navigationController?.navigationBar.tintColor = AppColor.Theme.main
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: "Today", style: .plain, target: self, action: #selector(selectToday))
-
+        
         self.view.backgroundColor = UIColor.white
         
         selectToday()
@@ -80,9 +63,9 @@ class ViewController: UIViewController {
         calendarView.layer.shadowOpacity = 1.0
         calendarView.layer.shadowColor = UIColor.lightGray.cgColor
         calendarView.layer.shadowOffset = CGSize(width: 0, height: 1)
-
+        
         setupConstraints()
-
+        
         dataSource = UICalendarViewDataSource()
         calendarView.delegate = self
         calendarView.drawCalendar()
@@ -115,7 +98,7 @@ class ViewController: UIViewController {
         menuButton.expandingDirection = .degree(225)
         self.view.addSubview(menuButton)
     }
-
+    
     func setupConstraints() {
         // Set Calendar Constraints
         let constraintBuilder = ConstraintBuilder(subview: calendarView, superview: self.view)
@@ -215,8 +198,8 @@ class ViewController: UIViewController {
 }
 
 
-extension ViewController: UICalendarViewDelegateProtocol {
-    func calendarView(_ calendarView: UICalendarView, didSelectedDate selectedDate: Date) {
+extension CalendarViewController: UICalendarViewDelegateProtocol {
+    public func calendarView(_ calendarView: UICalendarView, didSelectedDate selectedDate: Date) {
         self.selectedDate = selectedDate
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
@@ -227,98 +210,23 @@ extension ViewController: UICalendarViewDelegateProtocol {
         calenderDayOverviewTableView.reloadData()
     }
     
-    func calenderView(_ calendarView: UICalendarView, touchedNextMonthButton: UIButton) {
+    public func calenderView(_ calendarView: UICalendarView, touchedNextMonthButton: UIButton) {
     }
-
-    func calenderView(_ calendarView: UICalendarView, touchedPreviousMonthButton: UIButton) {
+    
+    public func calenderView(_ calendarView: UICalendarView, touchedPreviousMonthButton: UIButton) {
     }
 }
 
 
-extension ViewController: UICalendarDayOverviewTableViewDelegate {
-    func overviewTableView(_ tableView: UICalendarDayOverviewTableView, didSelectedEvent event: Event) {
+extension CalendarViewController: UICalendarDayOverviewTableViewDelegate {
+    public func overviewTableView(_ tableView: UICalendarDayOverviewTableView, didSelectedEvent event: Event) {
         particleCtrl.startParticleAnimation(forEventType: event.type)
     }
 }
 
-extension ViewController: FilterEventTypesDelegate {
-    func receiveNew(filterSelection: [EventType]) {
+extension CalendarViewController: FilterEventTypesDelegate {
+    public func receiveNew(filterSelection: [EventType]) {
         eventFilters = filterSelection
         reloadWith(date: selectedDate)
     }
 }
-
-protocol FilterEventTypesDelegate {
-    func receiveNew(filterSelection: [EventType])
-}
-
-class FilterEventTypesViewController: UITableViewController {
-    var selectedFilter: [EventType]!
-    
-    var filterDelegate: FilterEventTypesDelegate?
-    
-    override func viewDidLoad() {
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        filterDelegate?.receiveNew(filterSelection: selectedFilter)
-    }
-    
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return EventType.allEventTypes.count
-    }
-    
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
-        let eventType = getEventType(atIndexPath: indexPath)
-        cell.textLabel?.text = "\(eventType.symbol)\(eventType.name)"
-        cell.accessoryType = isSelected(eventType: eventType) ? .checkmark : .none
-        return cell
-    }
-    
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        let selectedEventType = getEventType(atIndexPath: indexPath)
-        if selectedFilter.contains(selectedEventType) {
-            remove(selectedEventType: selectedEventType)
-        } else {
-            selectedFilter.append(selectedEventType)
-        }
-        tableView.reloadRows(at: [indexPath], with: .none)
-    }
-    
-    func getEventType(atIndexPath indexPath: IndexPath) -> EventType {
-        return EventType.allEventTypes[indexPath.row]
-    }
-    
-    func isSelected(eventType: EventType) -> Bool {
-        return selectedFilter.contains(eventType)
-    }
-    
-    func remove(selectedEventType: EventType) {
-        for index in 0..<selectedFilter.count {
-            let eventType = selectedFilter[index]
-            if eventType == selectedEventType {
-                selectedFilter.remove(at: index)
-                break
-            }
-        }
-    }
-}
-
-
-let vCtrl = ViewController(userBirthdayEvents: userBirthdayEvents)
-let navCtrl = UINavigationController(rootViewController: vCtrl)
-
-PlaygroundPage.current.liveView = navCtrl
-
-
-
-
-
-
-
-
-

@@ -108,7 +108,6 @@ public class ParticleController {
     public func getParticles(forEventType eventType: EventType) -> [Particle] {
         switch eventType {
         case .birthday:
-            print("BIRTHDAY PARTICLES")
             var result: [Particle] = []
             for _ in 0..<1 {
                 if let emitter = getEmitter(forEventType: eventType) {
@@ -120,7 +119,6 @@ public class ParticleController {
             }
             return result
         case .christmas:
-            print("CHRISTMAS PARTICLES")
             var result: [Particle] = []
             for _ in 0..<1 {
                 if let emitter = getEmitter(forEventType: eventType) {
@@ -131,7 +129,6 @@ public class ParticleController {
             }
             return result
         case .wwdc:
-            print("WWDC PARTICLES")
             var result: [Particle] = []
             for _ in 0..<1 {
                 if let emitter = getEmitter(forEventType: eventType) {
@@ -142,7 +139,6 @@ public class ParticleController {
             }
             return result
         case .newYear:
-            print("NEW YEAR PARTICLES")
             var result: [Particle] = []
             for index in 0..<5 {
                 if let emitter = getEmitter(forEventType: eventType) {
@@ -154,7 +150,6 @@ public class ParticleController {
             }
             return result
         case .important:
-            print("IMPORTANT PARTICLES")
             var result: [Particle] = []
             for _ in 0..<1 {
                 if let emitter = getEmitter(forEventType: eventType) {
@@ -165,7 +160,6 @@ public class ParticleController {
             }
             return result
         case .holiday:
-            print("HOLIDAY PARTICLES")
             var result: [Particle] = []
             for _ in 0..<1 {
                 if let emitter = getEmitter(forEventType: eventType) {
@@ -176,7 +170,6 @@ public class ParticleController {
             }
             return result
         case .none:
-            print("NONE PARTICLES :D")
             return []
         }
     }
@@ -346,7 +339,6 @@ public class ParticleController {
             
             return emitter
         case .holiday:
-            print("HOLIDAY PARTICLES")
             let emitter = CAEmitterLayer()
             emitter.emitterPosition = simulatorScreenBottomCenterPoint
             emitter.emitterShape = kCAEmitterLayerLine
@@ -377,7 +369,6 @@ public class ParticleController {
             
             return emitter
         case .none:
-            print("NONE PARTICLES :D")
             return nil
         }
     }
@@ -403,25 +394,5 @@ public class ParticleController {
         let numberOfColors = colors.count
         let randomIndex = Int(arc4random_uniform(UInt32(numberOfColors)))
         return colors[randomIndex]
-    }
-    
-    func image(fromText: Character) -> UIImage? {
-        let size: CGFloat = 100.0
-        let rect: CGRect = CGRect(x: 0, y: 0, width: size, height: size)
-        UIGraphicsBeginImageContext(CGSize(width: size, height: size))
-        if let currentContext = UIGraphicsGetCurrentContext() {
-            print("IN HERE")
-            let label = UILabel(frame: rect)
-            label.text = "\(fromText)"
-            label.textAlignment = .center
-            label.layer.render(in: currentContext)
-            label.backgroundColor = UIColor.orange
-            let image = UIGraphicsGetImageFromCurrentImageContext()
-            return image
-        } else {
-            print("NOOOOOT in here!!")
-        }
-        
-        return nil
     }
 }

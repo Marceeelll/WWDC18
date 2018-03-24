@@ -49,14 +49,6 @@ public class UICalendarView: UIView {
         let headerView = createHeader()
         self.addSubview(headerView)
         
-//        var headerViewHeight: CGFloat = 0
-//        switch (showHeader, showMonthInHeader) {
-//        case (true, true): headerViewHeight = headerWithMonthHeight
-//        case (true, false): headerViewHeight = headerHeight
-//        default: headerViewHeight = 0
-//        }
-//        ConstraintAssistant.addConstraints(on: headerView, withSuperView: self, withHeightConstant: headerViewHeight, attachToTop: true)
-        // jump
         let constraintBuilder = ConstraintBuilder(subview: headerView, superview: self)
         constraintBuilder.constraint(subviewAttribute: .left, superviewAttribute: .left)
             .constraint(subviewAttribute: .top, superviewAttribute: .top)

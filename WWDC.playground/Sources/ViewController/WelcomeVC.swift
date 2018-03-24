@@ -1,11 +1,7 @@
-//: [Previous](@previous)
-
 import UIKit
-import PlaygroundSupport
-import AVFoundation
 
 
-class ViewController: UIViewController {
+public class WelcomeViewController: UIViewController {
     var startLabel = UILabel()
     var appleImageView = UIImageView()
     
@@ -26,10 +22,13 @@ class ViewController: UIViewController {
                              AppColor.Apple.purple,
                              AppColor.Apple.blue]
     
+    public var userBirthdayEvents: [Event] = []
+    public var selectedWeekdayStart = UICalendarWeekday.wednesday
+    
     var canContinueToNextScreen = false
     
     
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
         letters = Array(word)
         
@@ -41,7 +40,7 @@ class ViewController: UIViewController {
         startLabel.isHidden = true
         view.addSubview(startLabel)
         
-        appleImageView.image = UIImage(named: "icon_apple_black.png")
+        appleImageView.image = UIImage(named: "icon_jumping_ball_black.png")
         appleImageView.frame = CGRect(x: 5, y: 250, width: size, height: size)
         view.addSubview(appleImageView)
         
@@ -54,29 +53,12 @@ class ViewController: UIViewController {
         startAnimatingStartLabel(withDelay: startAnimatingLabelDelay)
     }
     
-    var player: AVAudioPlayer?
-    
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if canContinueToNextScreen {
             canContinueToNextScreen = false
-        }
-        
-        do {
-            let urlString = Bundle.main.path(forResource: "splash", ofType: "wav")!
-            let url = URL(fileURLWithPath: urlString)
-            print("URL: \(url)")
-            player = try AVAudioPlayer(contentsOf: url)
-        } catch {
-            print("Coudn't play sound.")
-        }
-        
-        if player != nil {
-            print("1111")
-            player?.prepareToPlay()
-            player?.setVolume(0.2, fadeDuration: 0)
-            player?.play()
-        } else {
-            print("2222")
+            let calendarVCtrl = CalendarViewController(userBirthdayEvents: userBirthdayEvents,
+                                                       selectedWeekdayStart: selectedWeekdayStart)
+            navigationController?.pushViewController(calendarVCtrl, animated: true)
         }
     }
     
@@ -141,7 +123,7 @@ class ViewController: UIViewController {
         UIView.transition(with: appleImageView,
                           duration: 0.25, options: .transitionCrossDissolve,
                           animations: {
-                            self.appleImageView.image = UIImage(named: "icon_apple_colored.png")
+                            self.appleImageView.image = UIImage(named: "icon_jumping_ball_colored.png")
         }, completion: { (finished) in
             if finished {
                 self.animateBouncingApple()
@@ -192,14 +174,5 @@ class ViewController: UIViewController {
     
     func setupConstraints() {
     }
-
+    
 }
-
-
-
-let vCtrl = ViewController()
-let navCtrl = UINavigationController(rootViewController: vCtrl)
-
-PlaygroundPage.current.liveView = navCtrl
-
-
