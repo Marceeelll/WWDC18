@@ -4,14 +4,15 @@ public class EventController {
     private var events: [Event] = []
     public var filter: [EventType] = []
     
-    public init(filter: [EventType]) {
+    public init(filter: [EventType], events: [Event]) {
         self.filter = filter
+        self.events = events
         createDemonstrationEvents()
     }
     
     private func createDemonstrationEvents() {
         let interval: TimeInterval = 60*5
-        events = [Event(title: "BIRTHDAY",
+        events += [Event(title: "BIRTHDAY",
                         startDate: Date(),
                         endDate: Date(timeIntervalSinceNow: interval),
                         type: .birthday, isFullTime: false),
@@ -31,7 +32,7 @@ public class EventController {
                         startDate: Date(timeIntervalSinceNow: interval*4),
                         endDate: Date(timeIntervalSinceNow: interval*5),
                         type: .newYear, isFullTime: false),
-                  Event(title: "NONE",
+                  Event(title: "NO CATEGORY",
                         startDate: Date(timeIntervalSinceNow: interval*5),
                         endDate: Date(timeIntervalSinceNow: interval*6),
                         type: .none, isFullTime: false),
@@ -39,14 +40,6 @@ public class EventController {
                         startDate: Date(timeIntervalSinceNow: interval*6),
                         endDate: Date(timeIntervalSinceNow: interval*7),
                         type: .wwdc, isFullTime: false),
-                  Event(title: "Denise Hagmann's Birthday (Sister)",
-                        startDate: Date(timeIntervalSince1970: 1523523600),
-                        endDate: Date(timeIntervalSince1970: 1523527200),
-                        type: .birthday, isFullTime: true),
-                  Event(title: "Marcel Hagmann's Birthday (Me)",
-                        startDate: Date(timeIntervalSince1970: 1538384400),
-                        endDate: Date(timeIntervalSince1970: 1538388000),
-                        type: .birthday, isFullTime: true),
                   Event(title: "WWDC Scholarship Result",
                         startDate: Date(timeIntervalSince1970: 1524225600),
                         endDate: Date(timeIntervalSince1970: 1524240000),
@@ -91,6 +84,17 @@ public class EventController {
                         startDate: Date(timeIntervalSince1970: 1542963600),
                         endDate: Date(timeIntervalSince1970: 1543003200),
                         type: .important, isFullTime: false)]
+        
+        let birthdayCtrl = BirthdayController()
+        if var marcel = birthdayCtrl.createPerson(name: "Marcel Hagmann", birthdayDay: 1, birthdayMonth: 10, birthdayYear: 1994) {
+            marcel.annotation = "me"
+            events += birthdayCtrl.addPersonToCalendar(person: marcel)
+        }
+        
+        if var denise = birthdayCtrl.createPerson(name: "Denise Hagmann", birthdayDay: 12, birthdayMonth: 4, birthdayYear: 1997) {
+            denise.annotation = "sister"
+            events += birthdayCtrl.addPersonToCalendar(person: denise)
+        }
     }
     
     
