@@ -1,16 +1,17 @@
 /*:
  # Demo:
- [ ◀️ Back to Info](@previous)
+ [Back to Features](@previous)
  */
 
 import UIKit
 import PlaygroundSupport
 
-//: Each country prefers a different day to start their week with. America usually starts with sunday despite Germany starts their week on monday. You have the ability to customize the calendar by selecting your preffered weekday.
-let weekday = UICalendarWeekday.monday
+//: - Experiment:
+//: Each country prefers a different day to start their week with. America usually starts with Sunday despite Germany starts their week on Monday. You have the ability to customize the calendar by selecting your prefered weekday.
+let weekday = UICalendarWeekday.sunday
 
 
-//: Erstellen wir einen Geburtstags Eintrag für dich :)
+//: - Experiment:
 //: You can easily add your own birthday to the calendar.
 //: If you entered valid data your birthday will appear on the calendar.
 let name = "iPhone"
@@ -19,7 +20,9 @@ let month = 01
 let year = 2007
 
 
-//: Now we are able to run the project.
+//: - Note:
+//: Only one particle animation at a time can appear.
+//: Please don't change the following lines.
 
 let birthdayCtrl = BirthdayController()
 var userBirthdayEvents: [Event] = []
